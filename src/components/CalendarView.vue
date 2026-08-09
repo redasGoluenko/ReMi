@@ -25,6 +25,7 @@ const loggedDatesMenu = ref<HTMLElement | null>(null)
 const pickerMonth = ref(currentMonth.value.getMonth())
 const pickerYear = ref(currentMonth.value.getFullYear())
 let toastTimeoutId: number | undefined
+let isClosingDatesMenu = false
 
 const weekdayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const monthOptions = Array.from({ length: 12 }, (_, index) => ({
@@ -108,6 +109,10 @@ function toDateKey(date: Date): string {
 }
 
 function moveMonth(direction: number) {
+  if (isLoggedDatesOpen.value) {
+    return
+  }
+
   currentMonth.value = new Date(
     currentMonth.value.getFullYear(),
     currentMonth.value.getMonth() + direction,
@@ -116,6 +121,10 @@ function moveMonth(direction: number) {
 }
 
 function openMonthPicker() {
+  if (isLoggedDatesOpen.value) {
+    return
+  }
+
   pickerMonth.value = currentMonth.value.getMonth()
   pickerYear.value = currentMonth.value.getFullYear()
   isMonthPickerOpen.value = true
@@ -170,9 +179,18 @@ function closeLoggedDatesOnOutsideClick(event: MouseEvent) {
   }
 
   isLoggedDatesOpen.value = false
+  isClosingDatesMenu = true
+  
+  setTimeout(() => {
+    isClosingDatesMenu = false
+  }, 0)
 }
 
 function openNewEvent(date = selectedDate.value) {
+  if (isClosingDatesMenu || isLoggedDatesOpen.value) {
+    return
+  }
+
   selectedDate.value = date
 
   const eventToEdit = events.value.find((event) => event.date === date)
