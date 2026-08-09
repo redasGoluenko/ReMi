@@ -617,7 +617,7 @@ async function deleteIdea(id: string) {
 
               <div
                 v-if="isIdeasOpen"
-                class="absolute bottom-full left-0 z-30 mb-2 w-full rounded-lg border border-[#d7c8b5] bg-[#fffdf8] p-2 text-left shadow-xl shadow-stone-950/10"
+                class="absolute bottom-full left-0 z-30 mb-2 w-full max-h-[calc(100vh-14rem)] overflow-y-auto overscroll-contain rounded-lg border border-[#d7c8b5] bg-[#fffdf8] p-2 text-left shadow-xl shadow-stone-950/10"
               >
                 <p v-if="dateIdeas.length === 0" class="px-3 py-4 text-sm text-stone-500">
                   No date ideas yet.
