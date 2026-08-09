@@ -126,6 +126,13 @@ function goToPickedMonth() {
   isMonthPickerOpen.value = false
 }
 
+function changePickerYear(delta: number) {
+  const minYear = 1900
+  const maxYear = 2100
+  const newYear = Math.max(minYear, Math.min(maxYear, pickerYear.value + delta))
+  pickerYear.value = newYear
+}
+
 function isActualCurrentMonth(month: number): boolean {
   return month === today.getMonth() && pickerYear.value === today.getFullYear()
 }
@@ -167,6 +174,14 @@ function closeLoggedDatesOnOutsideClick(event: MouseEvent) {
 
 function openNewEvent(date = selectedDate.value) {
   selectedDate.value = date
+
+  const eventToEdit = events.value.find((event) => event.date === date)
+
+  if (eventToEdit) {
+    openExistingEvent(eventToEdit)
+    return
+  }
+
   editingEvent.value = null
   isModalOpen.value = true
 }
@@ -186,16 +201,42 @@ function showToast(message: string) {
 
   toastTimeoutId = window.setTimeout(() => {
     toastMessage.value = ''
-  }, 2400)
+  }, 2000)
+}
+
+function dismissToast() {
+  toastMessage.value = ''
+
+  if (toastTimeoutId) {
+    window.clearTimeout(toastTimeoutId)
+    toastTimeoutId = undefined
+  }
 }
 
 function saveEvent(event: CalendarEvent) {
-  const isUpdate = events.value.some((storedEvent) => storedEvent.id === event.id)
+  const storedEvent = events.value.find((stored) => stored.id === event.id)
+  const isUpdate = Boolean(storedEvent)
+
+  if (isUpdate) {
+    const unchanged =
+      storedEvent!.title === event.title &&
+      storedEvent!.description === event.description &&
+      storedEvent!.date === event.date
+
+    if (unchanged) {
+      isModalOpen.value = false
+      isLoggedDatesOpen.value = false
+      isMonthPickerOpen.value = false
+        return
+      return
+    }
+  }
+
   events.value = localEventRepository.save(event)
   isModalOpen.value = false
   isLoggedDatesOpen.value = false
   isMonthPickerOpen.value = false
-  showToast(isUpdate ? 'Date plan updated' : 'Date plan saved')
+  showToast(isUpdate ? 'Edit successful' : 'Date plan saved')
 }
 
 function deleteEvent(id: string) {
@@ -210,20 +251,29 @@ function deleteEvent(id: string) {
 <template>
   <main class="min-h-screen bg-[#f7f5ef] text-[#16251f]">
     <Transition
-      enter-active-class="transition duration-200 ease-out"
-      enter-from-class="-translate-y-3 opacity-0"
+      enter-active-class="transition duration-150 ease-out"
+      enter-from-class="translate-y-2 opacity-0"
       enter-to-class="translate-y-0 opacity-100"
-      leave-active-class="transition duration-150 ease-in"
+      leave-active-class="transition duration-100 ease-in"
       leave-from-class="translate-y-0 opacity-100"
-      leave-to-class="-translate-y-3 opacity-0"
+      leave-to-class="translate-y-2 opacity-0"
     >
-      <div
-        v-if="toastMessage"
-        class="fixed left-1/2 top-3 z-[60] w-[calc(100%-1.5rem)] max-w-sm -translate-x-1/2 rounded-md border border-[#d7c8b5] bg-[#fffdf8] px-4 py-3 text-center text-sm font-medium text-[#16251f] shadow-xl shadow-stone-950/10"
-        role="status"
-        aria-live="polite"
-      >
-        {{ toastMessage }}
+      <div v-if="toastMessage" class="fixed left-1/2 bottom-6 z-[60] w-[calc(100%-1.5rem)] max-w-sm -translate-x-1/2">
+        <div
+          class="flex items-center justify-between rounded-md border border-[#d7c8b5] bg-[#fffdf8] px-4 py-3 text-sm font-medium text-[#16251f] shadow-xl shadow-stone-950/10"
+          role="status"
+          aria-live="polite"
+        >
+          <div class="mr-3 flex-1 text-left text-sm">{{ toastMessage }}</div>
+          <button
+            type="button"
+            class="ml-2 inline-flex h-8 w-8 items-center justify-center rounded-md border border-stone-200 text-sm text-stone-600 transition hover:bg-[#f4efe6] focus:outline-none focus:ring-2 focus:ring-[#9fb5a9]"
+            aria-label="Dismiss notification"
+            @click="dismissToast"
+          >
+            &times;
+          </button>
+        </div>
       </div>
     </Transition>
 
@@ -362,21 +412,15 @@ function deleteEvent(id: string) {
       class="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/35 p-3 backdrop-blur-sm"
       @click.self="isMonthPickerOpen = false"
     >
-      <section class="w-full rounded-lg border border-stone-200 bg-[#fffdf8] p-5 text-left shadow-2xl shadow-stone-950/15 sm:max-w-md">
-        <div class="mb-5 flex items-start justify-between gap-4">
-          <div>
-            <p class="text-sm font-medium uppercase tracking-[0.16em] text-[#7a5d3b]">Go to month</p>
-            <h2 class="mt-2 text-2xl font-semibold text-[#16251f]">Choose a date</h2>
-          </div>
-          <button
-            class="flex h-9 w-9 items-center justify-center rounded-md border border-stone-200 text-xl leading-none text-stone-500 transition hover:border-[#d4c6b3] hover:bg-[#f4efe6] hover:text-[#163c2f] focus:outline-none focus:ring-2 focus:ring-[#9fb5a9]"
-            type="button"
-            aria-label="Close month picker"
-            @click="isMonthPickerOpen = false"
-          >
-            &times;
-          </button>
-        </div>
+      <section class="relative w-full rounded-lg border border-stone-200 bg-[#fffdf8] p-5 text-left shadow-2xl shadow-stone-950/15 sm:max-w-md">
+        <button
+          class="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-md border border-stone-200 text-xl leading-none text-stone-500 transition hover:border-[#d4c6b3] hover:bg-[#f4efe6] hover:text-[#163c2f] focus:outline-none focus:ring-2 focus:ring-[#9fb5a9]"
+          type="button"
+          aria-label="Close month picker"
+          @click="isMonthPickerOpen = false"
+        >
+          &times;
+        </button>
 
         <form class="space-y-4" @submit.prevent="goToPickedMonth">
           <div>
@@ -401,16 +445,32 @@ function deleteEvent(id: string) {
             </div>
           </div>
 
-          <label class="block">
+          <div>
             <span class="text-sm font-medium text-stone-700">Year</span>
-            <input
-              v-model.number="pickerYear"
-              class="mt-2 w-full rounded-md border border-stone-200 bg-white px-3 py-2.5 text-[#16251f] outline-none transition focus:border-[#6f8f7a] focus:ring-4 focus:ring-[#dfe8e1]"
-              type="number"
-              min="1900"
-              max="2100"
-            />
-          </label>
+            <div class="mt-2 flex w-full items-center">
+              <button
+                type="button"
+                class="flex-none rounded-md border px-3 py-2.5 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-[#9fb5a9]"
+                aria-label="Previous year"
+                @click="changePickerYear(-1)"
+              >
+                &lsaquo;
+              </button>
+
+              <div class="flex-1 text-center rounded-md border border-stone-200 bg-white px-3 py-2.5 text-[#16251f] text-sm font-medium mx-2">
+                {{ pickerYear }}
+              </div>
+
+              <button
+                type="button"
+                class="flex-none rounded-md border px-3 py-2.5 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-[#9fb5a9]"
+                aria-label="Next year"
+                @click="changePickerYear(1)"
+              >
+                &rsaquo;
+              </button>
+            </div>
+          </div>
 
           <div class="flex gap-3 pt-2">
             <button
