@@ -35,6 +35,9 @@ const pickerYear = ref(currentMonth.value.getFullYear())
 const editingIdea = ref<CalendarEvent | null>(null)
 let toastTimeoutId: number | undefined
 let isClosingDatesMenu = false
+let touchStartX = 0
+let touchStartY = 0
+let touchStartTime = 0
 
 const weekdayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const monthOptions = Array.from({ length: 12 }, (_, index) => ({
@@ -146,6 +149,62 @@ function moveMonth(direction: number) {
     currentMonth.value.getMonth() + direction,
     1,
   )
+}
+
+function handleSwipeStart(event: TouchEvent) {
+  if (isModalOpen.value || isIdeaModalOpen.value || isMonthPickerOpen.value) {
+    return
+  }
+
+  if (isLoggedDatesOpen.value || isIdeasOpen.value) {
+    return
+  }
+
+  const touch = event.touches[0]
+
+  if (!touch) {
+    return
+  }
+
+  touchStartX = touch.clientX
+  touchStartY = touch.clientY
+  touchStartTime = Date.now()
+}
+
+function handleSwipeEnd(event: TouchEvent) {
+  if (!touchStartTime) {
+    return
+  }
+
+  const touch = event.changedTouches[0]
+
+  if (!touch) {
+    return
+  }
+
+  const deltaX = touch.clientX - touchStartX
+  const deltaY = touch.clientY - touchStartY
+  const elapsed = Date.now() - touchStartTime
+
+  touchStartTime = 0
+
+  const horizontalDistance = Math.abs(deltaX)
+  const verticalDistance = Math.abs(deltaY)
+  const swipeThreshold = 48
+
+  if (elapsed > 900 || horizontalDistance < swipeThreshold || horizontalDistance <= verticalDistance) {
+    return
+  }
+
+  if (deltaX < 0) {
+    moveMonth(1)
+  } else {
+    moveMonth(-1)
+  }
+}
+
+function handleSwipeCancel() {
+  touchStartTime = 0
 }
 
 function goToToday() {
@@ -467,7 +526,12 @@ async function deleteIdea(id: string) {
     </Transition>
 
     <div class="mx-auto flex h-full w-full max-w-6xl flex-col px-2 pt-2 pb-0 sm:px-4 sm:pt-4 md:px-6 md:pt-6">
-      <section class="relative flex h-full min-h-0 flex-1 flex-col rounded-lg border border-[#d7c8b5] bg-[#fffdf8] shadow-sm shadow-stone-950/5">
+      <section
+        class="relative flex h-full min-h-0 flex-1 flex-col rounded-lg border border-[#d7c8b5] bg-[#fffdf8] shadow-sm shadow-stone-950/5"
+        @touchstart.passive="handleSwipeStart"
+        @touchend.passive="handleSwipeEnd"
+        @touchcancel="handleSwipeCancel"
+      >
         <div class="flex items-center justify-between gap-1 border-b border-[#d7c8b5] p-2 sm:gap-2 sm:p-3 md:p-4">
           <button
             class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-stone-200 text-xl text-stone-600 transition hover:border-[#bca889] hover:bg-[#f4efe6] hover:text-[#163c2f] focus:outline-none focus:ring-2 focus:ring-[#9fb5a9]"
