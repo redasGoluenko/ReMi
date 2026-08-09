@@ -173,7 +173,7 @@ function deleteEvent(id: string) {
 </script>
 
 <template>
-  <main class="min-h-screen bg-[#fff8f7] text-zinc-950">
+  <main class="min-h-screen bg-[#f7f5ef] text-[#16251f]">
     <Transition
       enter-active-class="transition duration-200 ease-out"
       enter-from-class="-translate-y-3 opacity-0"
@@ -184,7 +184,7 @@ function deleteEvent(id: string) {
     >
       <div
         v-if="toastMessage"
-        class="fixed left-1/2 top-3 z-[60] w-[calc(100%-1.5rem)] max-w-sm -translate-x-1/2 rounded-md border border-rose-100 bg-white px-4 py-3 text-center text-sm font-medium text-zinc-800 shadow-xl shadow-rose-950/10"
+        class="fixed left-1/2 top-3 z-[60] w-[calc(100%-1.5rem)] max-w-sm -translate-x-1/2 rounded-md border border-[#d7c8b5] bg-[#fffdf8] px-4 py-3 text-center text-sm font-medium text-[#16251f] shadow-xl shadow-stone-950/10"
         role="status"
         aria-live="polite"
       >
@@ -193,10 +193,10 @@ function deleteEvent(id: string) {
     </Transition>
 
     <div class="mx-auto flex min-h-screen w-full max-w-5xl flex-col px-3 py-3 sm:px-6 sm:py-6">
-      <section class="relative flex-1 rounded-lg border border-rose-100 bg-white shadow-sm shadow-rose-950/5">
-        <div class="flex items-center justify-between gap-2 border-b border-rose-100 p-3 sm:p-4">
+      <section class="relative flex-1 rounded-lg border border-[#d7c8b5] bg-[#fffdf8] shadow-sm shadow-stone-950/5">
+        <div class="flex items-center justify-between gap-2 border-b border-[#d7c8b5] p-3 sm:p-4">
           <button
-            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-zinc-200 text-xl text-zinc-600 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-300"
+            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-stone-200 text-xl text-stone-600 transition hover:border-[#bca889] hover:bg-[#f4efe6] hover:text-[#163c2f] focus:outline-none focus:ring-2 focus:ring-[#9fb5a9]"
             type="button"
             aria-label="Previous month"
             @click="moveMonth(-1)"
@@ -204,12 +204,12 @@ function deleteEvent(id: string) {
             &lsaquo;
           </button>
 
-          <h1 class="min-w-0 flex-1 text-center text-lg font-semibold text-zinc-950 sm:text-2xl">
+          <h1 class="min-w-0 flex-1 text-center text-lg font-semibold text-[#16251f] sm:text-2xl">
             {{ monthLabel }}
           </h1>
 
           <button
-            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-zinc-200 text-xl text-zinc-600 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-300"
+            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-stone-200 text-xl text-stone-600 transition hover:border-[#bca889] hover:bg-[#f4efe6] hover:text-[#163c2f] focus:outline-none focus:ring-2 focus:ring-[#9fb5a9]"
             type="button"
             aria-label="Next month"
             @click="moveMonth(1)"
@@ -219,7 +219,7 @@ function deleteEvent(id: string) {
 
           <div ref="loggedDatesMenu" class="relative">
             <button
-              class="ml-1 rounded-md border border-zinc-200 px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 focus:outline-none focus:ring-2 focus:ring-rose-300"
+              class="ml-1 rounded-md border border-stone-200 px-3 py-2 text-sm font-medium text-stone-700 transition hover:border-[#bca889] hover:bg-[#f4efe6] focus:outline-none focus:ring-2 focus:ring-[#9fb5a9]"
               type="button"
               @click="isLoggedDatesOpen = !isLoggedDatesOpen"
             >
@@ -228,21 +228,21 @@ function deleteEvent(id: string) {
 
             <div
               v-if="isLoggedDatesOpen"
-              class="absolute right-0 top-12 z-20 max-h-80 w-72 overflow-y-auto rounded-lg border border-rose-100 bg-white p-2 text-left shadow-xl shadow-rose-950/10"
+              class="absolute right-0 top-12 z-20 max-h-80 w-72 overflow-y-auto rounded-lg border border-[#d7c8b5] bg-[#fffdf8] p-2 text-left shadow-xl shadow-stone-950/10"
             >
-              <p v-if="loggedDates.length === 0" class="px-3 py-4 text-sm text-zinc-500">
+              <p v-if="loggedDates.length === 0" class="px-3 py-4 text-sm text-stone-500">
                 No dates logged yet.
               </p>
 
               <button
                 v-for="loggedDate in loggedDates"
                 :key="loggedDate.date"
-                class="w-full rounded-md px-3 py-2.5 text-left transition hover:bg-rose-50 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                class="w-full rounded-md px-3 py-2.5 text-left transition hover:bg-[#f4efe6] focus:outline-none focus:ring-2 focus:ring-[#9fb5a9]"
                 type="button"
                 @click="goToLoggedDate(loggedDate.date)"
               >
-                <span class="block text-sm font-semibold text-zinc-950">{{ loggedDate.label }}</span>
-                <span class="mt-0.5 block truncate text-xs text-zinc-500">
+                <span class="block text-sm font-semibold text-[#16251f]">{{ loggedDate.label }}</span>
+                <span class="mt-0.5 block truncate text-xs text-stone-500">
                   {{ loggedDate.events.map((event) => event.title).join(', ') }}
                 </span>
               </button>
@@ -250,7 +250,7 @@ function deleteEvent(id: string) {
           </div>
         </div>
 
-          <div class="grid grid-cols-7 border-b border-rose-100 bg-rose-50/60 text-center text-[0.65rem] font-semibold uppercase tracking-[0.08em] text-rose-500 sm:text-xs sm:tracking-[0.14em]">
+          <div class="grid grid-cols-7 border-b border-[#d7c8b5] bg-[#f4efe6] text-center text-[0.65rem] font-semibold uppercase tracking-[0.08em] text-[#7a5d3b] sm:text-xs sm:tracking-[0.14em]">
             <div v-for="day in weekdayLabels" :key="day" class="py-3">{{ day }}</div>
           </div>
 
@@ -258,14 +258,14 @@ function deleteEvent(id: string) {
             <div
               v-for="day in calendarDays"
               :key="day.date"
-              class="min-h-16 cursor-pointer border-b border-r border-rose-100 p-1.5 text-left transition hover:bg-rose-50/70 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-rose-300 sm:min-h-28 sm:p-3 [&:nth-child(7n)]:border-r-0"
+              class="min-h-16 cursor-pointer border-b border-r border-[#e3d8c9] p-1.5 text-left transition hover:bg-[#f4efe6] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#6f8f7a] sm:min-h-28 sm:p-3 [&:nth-child(7n)]:border-r-0"
               :class="[
                 day.events.length > 0
-                  ? 'bg-rose-50/70'
+                  ? 'bg-[#e8efe9]'
                   : day.isCurrentMonth
-                    ? 'bg-white'
-                    : 'bg-zinc-50 text-zinc-400',
-                selectedDate === day.date ? 'ring-2 ring-inset ring-rose-300' : '',
+                    ? 'bg-[#fffdf8]'
+                    : 'bg-[#f1eee7] text-stone-400',
+                selectedDate === day.date ? 'ring-2 ring-inset ring-[#6f8f7a]' : '',
               ]"
               role="button"
               tabindex="0"
@@ -276,11 +276,11 @@ function deleteEvent(id: string) {
               <span class="flex items-center justify-between gap-2">
                 <span
                   class="flex h-6 w-6 items-center justify-center rounded-md text-xs font-semibold sm:h-7 sm:w-7 sm:text-sm"
-                  :class="day.isToday ? 'bg-rose-500 text-white' : 'text-zinc-700'"
+                  :class="day.isToday ? 'bg-[#163c2f] text-white' : 'text-stone-700'"
                 >
                   {{ day.dayNumber }}
                 </span>
-                <span v-if="day.events.length" class="text-[0.65rem] font-medium text-rose-500 sm:text-xs">
+                <span v-if="day.events.length" class="text-[0.65rem] font-medium text-[#163c2f] sm:text-xs">
                   {{ day.events.length }}
                 </span>
               </span>
@@ -289,7 +289,7 @@ function deleteEvent(id: string) {
                 <span
                   v-for="event in day.events.slice(0, 3)"
                   :key="event.id"
-                  class="h-1.5 w-1.5 rounded-full bg-rose-500"
+                  class="h-1.5 w-1.5 rounded-full bg-[#163c2f]"
                 />
               </span>
 
@@ -297,7 +297,7 @@ function deleteEvent(id: string) {
                 <button
                   v-for="event in day.events"
                   :key="event.id"
-                  class="truncate rounded-md bg-rose-100 px-2 py-1 text-left text-xs font-medium text-rose-900 transition hover:bg-rose-200 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                  class="truncate rounded-md bg-[#dfe8e1] px-2 py-1 text-left text-xs font-medium text-[#163c2f] transition hover:bg-[#cfddcf] focus:outline-none focus:ring-2 focus:ring-[#6f8f7a]"
                   type="button"
                   @click.stop="openExistingEvent(event)"
                 >
