@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import EventModal from './EventModal.vue'
-import { localEventRepository } from '../services/eventStorage'
+import { supabaseEventRepository } from '../services/eventStorage'
 import type { CalendarEvent } from '../types/calendar'
 
 interface CalendarDay {
@@ -20,6 +20,10 @@ const editingEvent = ref<CalendarEvent | null>(null)
 const isModalOpen = ref(false)
 const isMonthPickerOpen = ref(false)
 const isLoggedDatesOpen = ref(false)
+const isLoadingEvents = ref(false)
+const isSavingEvent = ref(false)
+const isDeletingEvent = ref(false)
+const loadError = ref('')
 const toastMessage = ref('')
 const loggedDatesMenu = ref<HTMLElement | null>(null)
 const pickerMonth = ref(currentMonth.value.getMonth())
@@ -87,8 +91,8 @@ const calendarDays = computed<CalendarDay[]>(() => {
   })
 })
 
-onMounted(() => {
-  events.value = localEventRepository.list()
+onMounted(async () => {
+  await loadEvents()
   document.addEventListener('click', closeLoggedDatesOnOutsideClick)
 })
 
@@ -235,7 +239,26 @@ function dismissToast() {
   }
 }
 
-function saveEvent(event: CalendarEvent) {
+async function loadEvents() {
+  isLoadingEvents.value = true
+  loadError.value = ''
+
+  try {
+    events.value = await supabaseEventRepository.list()
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    loadError.value = `Could not load dates: ${message}`
+    showToast('Could not load dates')
+  } finally {
+    isLoadingEvents.value = false
+  }
+}
+
+async function saveEvent(event: CalendarEvent) {
+  if (isSavingEvent.value || isDeletingEvent.value) {
+    return
+  }
+
   const storedEvent = events.value.find((stored) => stored.id === event.id)
   const isUpdate = Boolean(storedEvent)
 
@@ -253,19 +276,59 @@ function saveEvent(event: CalendarEvent) {
     }
   }
 
-  events.value = localEventRepository.save(event)
-  isModalOpen.value = false
-  isLoggedDatesOpen.value = false
-  isMonthPickerOpen.value = false
-  showToast(isUpdate ? 'Edit successful' : 'Date plan saved')
+  isSavingEvent.value = true
+
+  try {
+    const savedEvent = isUpdate
+      ? await supabaseEventRepository.update(event)
+      : await supabaseEventRepository.create(event)
+
+    if (isUpdate) {
+      const index = events.value.findIndex((stored) => stored.id === savedEvent.id)
+
+      if (index >= 0) {
+        events.value.splice(index, 1, savedEvent)
+      } else {
+        events.value.push(savedEvent)
+      }
+    } else {
+      events.value.push(savedEvent)
+    }
+
+    isModalOpen.value = false
+    isLoggedDatesOpen.value = false
+    isMonthPickerOpen.value = false
+    loadError.value = ''
+    showToast(isUpdate ? 'Edit successful' : 'Date plan saved')
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    showToast(`Could not save date: ${message}`)
+  } finally {
+    isSavingEvent.value = false
+  }
 }
 
-function deleteEvent(id: string) {
-  events.value = localEventRepository.delete(id)
-  isModalOpen.value = false
-  isLoggedDatesOpen.value = false
-  isMonthPickerOpen.value = false
-  showToast('Date plan deleted')
+async function deleteEvent(id: string) {
+  if (isSavingEvent.value || isDeletingEvent.value) {
+    return
+  }
+
+  isDeletingEvent.value = true
+
+  try {
+    await supabaseEventRepository.delete(id)
+    events.value = events.value.filter((event) => event.id !== id)
+    isModalOpen.value = false
+    isLoggedDatesOpen.value = false
+    isMonthPickerOpen.value = false
+    loadError.value = ''
+    showToast('Date plan deleted')
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    showToast(`Could not delete date: ${message}`)
+  } finally {
+    isDeletingEvent.value = false
+  }
 }
 </script>
 
@@ -340,22 +403,32 @@ function deleteEvent(id: string) {
               v-if="isLoggedDatesOpen"
               class="absolute right-0 top-12 z-20 max-h-80 w-72 overflow-y-auto rounded-lg border border-[#d7c8b5] bg-[#fffdf8] p-2 text-left shadow-xl shadow-stone-950/10"
             >
-              <p v-if="loggedDates.length === 0" class="px-3 py-4 text-sm text-stone-500">
+              <p v-if="isLoadingEvents" class="px-3 py-4 text-sm text-stone-500">
+                Loading dates...
+              </p>
+
+              <p v-else-if="loadError" class="px-3 py-4 text-sm text-red-700">
+                {{ loadError }}
+              </p>
+
+              <p v-else-if="loggedDates.length === 0" class="px-3 py-4 text-sm text-stone-500">
                 No dates logged yet.
               </p>
 
-              <button
-                v-for="loggedDate in loggedDates"
-                :key="loggedDate.date"
-                class="w-full rounded-md px-3 py-2.5 text-left transition hover:bg-[#f4efe6] focus:outline-none focus:ring-2 focus:ring-[#9fb5a9]"
-                type="button"
-                @click="goToLoggedDate(loggedDate.date)"
-              >
-                <span class="block text-sm font-semibold text-[#16251f]">{{ loggedDate.label }}</span>
-                <span class="mt-0.5 block truncate text-xs text-stone-500">
-                  {{ loggedDate.events.map((event) => event.title).join(', ') }}
-                </span>
-              </button>
+              <template v-else>
+                <button
+                  v-for="loggedDate in loggedDates"
+                  :key="loggedDate.date"
+                  class="w-full rounded-md px-3 py-2.5 text-left transition hover:bg-[#f4efe6] focus:outline-none focus:ring-2 focus:ring-[#9fb5a9]"
+                  type="button"
+                  @click="goToLoggedDate(loggedDate.date)"
+                >
+                  <span class="block text-sm font-semibold text-[#16251f]">{{ loggedDate.label }}</span>
+                  <span class="mt-0.5 block truncate text-xs text-stone-500">
+                    {{ loggedDate.events.map((event) => event.title).join(', ') }}
+                  </span>
+                </button>
+              </template>
             </div>
           </div>
         </div>
@@ -418,6 +491,7 @@ function deleteEvent(id: string) {
           </div>
 
           <div class="border-t border-[#d7c8b5] p-2 sm:p-3 md:p-4">
+            <p v-if="isLoadingEvents" class="mb-2 text-center text-sm text-stone-600">Loading dates...</p>
             <button
               type="button"
               class="w-full rounded-md bg-[#163c2f] px-4 py-2.5 font-semibold text-white transition hover:bg-[#0f2b22] focus:outline-none focus:ring-2 focus:ring-[#9fb5a9] sm:py-3"

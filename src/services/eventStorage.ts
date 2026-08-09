@@ -1,12 +1,36 @@
 import type { CalendarEvent } from '../types/calendar'
+import { getSupabaseClient } from './supabaseClient'
 
 const STORAGE_KEY = 'remi.calendar.events'
 
 export interface EventRepository {
+  list(): Promise<CalendarEvent[]>
+  create(event: CalendarEvent): Promise<CalendarEvent>
+  update(event: CalendarEvent): Promise<CalendarEvent>
+  delete(id: string): Promise<void>
+}
+
+export interface LegacyEventRepository {
   list(): CalendarEvent[]
   save(event: CalendarEvent): CalendarEvent[]
   delete(id: string): CalendarEvent[]
 }
+
+interface DateRow {
+  id: string
+  title: string
+  description: string
+  date: string
+}
+
+const mapRowToEvent = (row: DateRow): CalendarEvent => ({
+  id: row.id,
+  title: row.title,
+  description: row.description,
+  date: row.date,
+})
+
+const SELECT_COLUMNS = 'id, title, description, date'
 
 const readEvents = (): CalendarEvent[] => {
   const rawEvents = window.localStorage.getItem(STORAGE_KEY)
@@ -38,7 +62,71 @@ const writeEvents = (events: CalendarEvent[]) => {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(events))
 }
 
-export const localEventRepository: EventRepository = {
+export const supabaseEventRepository: EventRepository = {
+  async list() {
+    const supabase = getSupabaseClient()
+    const { data, error } = await supabase
+      .from('dates')
+      .select(SELECT_COLUMNS)
+      .order('date', { ascending: true })
+      .order('created_at', { ascending: true })
+
+    if (error) {
+      throw new Error(error.message)
+    }
+
+    return (data ?? []).map(mapRowToEvent)
+  },
+  async create(event) {
+    const supabase = getSupabaseClient()
+    const { data, error } = await supabase
+      .from('dates')
+      .insert({
+        id: event.id,
+        title: event.title,
+        description: event.description,
+        date: event.date,
+      })
+      .select(SELECT_COLUMNS)
+      .single()
+
+    if (error) {
+      throw new Error(error.message)
+    }
+
+    return mapRowToEvent(data)
+  },
+  async update(event) {
+    const supabase = getSupabaseClient()
+    const { data, error } = await supabase
+      .from('dates')
+      .update({
+        title: event.title,
+        description: event.description,
+        date: event.date,
+      })
+      .eq('id', event.id)
+      .select(SELECT_COLUMNS)
+      .single()
+
+    if (error) {
+      throw new Error(error.message)
+    }
+
+    return mapRowToEvent(data)
+  },
+  async delete(id) {
+    const supabase = getSupabaseClient()
+    const { error } = await supabase.from('dates').delete().eq('id', id)
+
+    if (error) {
+      throw new Error(error.message)
+    }
+  },
+}
+
+// Backward compatibility for stale hot-module imports during migration.
+export const localEventRepository: LegacyEventRepository = {
   list() {
     return readEvents()
   },
