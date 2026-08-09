@@ -29,9 +29,12 @@ let toastTimeoutId: number | undefined
 const weekdayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const monthOptions = Array.from({ length: 12 }, (_, index) => ({
   value: index,
-  label: `${String(index + 1).padStart(2, '0')} - ${new Intl.DateTimeFormat('en', {
-    month: 'long',
+  shortLabel: `${String(index + 1).padStart(2, '0')} - ${new Intl.DateTimeFormat('en', {
+    month: 'short',
   }).format(new Date(2026, index, 1))}`,
+  label: new Intl.DateTimeFormat('en', {
+    month: 'long',
+  }).format(new Date(2026, index, 1)),
 }))
 
 const monthLabel = computed(() =>
@@ -121,6 +124,10 @@ function openMonthPicker() {
 function goToPickedMonth() {
   currentMonth.value = new Date(pickerYear.value, pickerMonth.value, 1)
   isMonthPickerOpen.value = false
+}
+
+function isActualCurrentMonth(month: number): boolean {
+  return month === today.getMonth() && pickerYear.value === today.getFullYear()
 }
 
 function formatDate(date: string): string {
@@ -372,17 +379,27 @@ function deleteEvent(id: string) {
         </div>
 
         <form class="space-y-4" @submit.prevent="goToPickedMonth">
-          <label class="block">
+          <div>
             <span class="text-sm font-medium text-stone-700">Month</span>
-            <select
-              v-model="pickerMonth"
-              class="mt-2 w-full rounded-md border border-stone-200 bg-white px-3 py-2.5 text-[#16251f] outline-none transition focus:border-[#6f8f7a] focus:ring-4 focus:ring-[#dfe8e1]"
-            >
-              <option v-for="month in monthOptions" :key="month.value" :value="month.value">
-                {{ month.label }}{{ month.value === currentMonth.getMonth() ? ' (current)' : '' }}
-              </option>
-            </select>
-          </label>
+            <div class="mt-2 grid grid-cols-3 gap-2">
+              <button
+                v-for="month in monthOptions"
+                :key="month.value"
+                class="rounded-md border px-3 py-2.5 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-[#9fb5a9]"
+                :class="[
+                  pickerMonth === month.value
+                    ? 'border-[#163c2f] bg-[#163c2f] text-white'
+                    : isActualCurrentMonth(month.value)
+                      ? 'border-[#7a5d3b] bg-[#efe6d8] text-[#5b4329]'
+                      : 'border-stone-200 bg-white text-stone-700 hover:bg-[#f4efe6]',
+                ]"
+                type="button"
+                @click="pickerMonth = month.value"
+              >
+                {{ month.shortLabel }}
+              </button>
+            </div>
+          </div>
 
           <label class="block">
             <span class="text-sm font-medium text-stone-700">Year</span>
