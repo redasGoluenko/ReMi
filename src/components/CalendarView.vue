@@ -18,15 +18,30 @@ const events = ref<CalendarEvent[]>([])
 const selectedDate = ref(toDateKey(today))
 const editingEvent = ref<CalendarEvent | null>(null)
 const isModalOpen = ref(false)
+const isMonthPickerOpen = ref(false)
 const isLoggedDatesOpen = ref(false)
 const toastMessage = ref('')
 const loggedDatesMenu = ref<HTMLElement | null>(null)
+const pickerMonth = ref(currentMonth.value.getMonth())
+const pickerYear = ref(currentMonth.value.getFullYear())
 let toastTimeoutId: number | undefined
 
 const weekdayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+const monthOptions = Array.from({ length: 12 }, (_, index) => ({
+  value: index,
+  label: `${String(index + 1).padStart(2, '0')} - ${new Intl.DateTimeFormat('en', {
+    month: 'long',
+  }).format(new Date(2026, index, 1))}`,
+}))
 
 const monthLabel = computed(() =>
-  new Intl.DateTimeFormat('en', { month: 'long', year: 'numeric' }).format(currentMonth.value),
+  `${String(currentMonth.value.getMonth() + 1).padStart(2, '0')} - ${new Intl.DateTimeFormat(
+    'en',
+    {
+      month: 'long',
+      year: 'numeric',
+    },
+  ).format(currentMonth.value)}`,
 )
 
 const loggedDates = computed(() => {
@@ -97,6 +112,17 @@ function moveMonth(direction: number) {
   )
 }
 
+function openMonthPicker() {
+  pickerMonth.value = currentMonth.value.getMonth()
+  pickerYear.value = currentMonth.value.getFullYear()
+  isMonthPickerOpen.value = true
+}
+
+function goToPickedMonth() {
+  currentMonth.value = new Date(pickerYear.value, pickerMonth.value, 1)
+  isMonthPickerOpen.value = false
+}
+
 function formatDate(date: string): string {
   return new Intl.DateTimeFormat('en', {
     month: 'short',
@@ -161,6 +187,7 @@ function saveEvent(event: CalendarEvent) {
   events.value = localEventRepository.save(event)
   isModalOpen.value = false
   isLoggedDatesOpen.value = false
+  isMonthPickerOpen.value = false
   showToast(isUpdate ? 'Date plan updated' : 'Date plan saved')
 }
 
@@ -168,6 +195,7 @@ function deleteEvent(id: string) {
   events.value = localEventRepository.delete(id)
   isModalOpen.value = false
   isLoggedDatesOpen.value = false
+  isMonthPickerOpen.value = false
   showToast('Date plan deleted')
 }
 </script>
@@ -204,9 +232,13 @@ function deleteEvent(id: string) {
             &lsaquo;
           </button>
 
-          <h1 class="min-w-0 flex-1 text-center text-lg font-semibold text-[#16251f] sm:text-2xl">
+          <button
+            class="min-w-0 flex-1 rounded-md px-2 py-2 text-center text-lg font-semibold text-[#16251f] transition hover:bg-[#f4efe6] focus:outline-none focus:ring-2 focus:ring-[#9fb5a9] sm:text-2xl"
+            type="button"
+            @click="openMonthPicker"
+          >
             {{ monthLabel }}
-          </h1>
+          </button>
 
           <button
             class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-stone-200 text-xl text-stone-600 transition hover:border-[#bca889] hover:bg-[#f4efe6] hover:text-[#163c2f] focus:outline-none focus:ring-2 focus:ring-[#9fb5a9]"
@@ -317,5 +349,69 @@ function deleteEvent(id: string) {
       @delete="deleteEvent"
       @save="saveEvent"
     />
+
+    <div
+      v-if="isMonthPickerOpen"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/35 p-3 backdrop-blur-sm"
+      @click.self="isMonthPickerOpen = false"
+    >
+      <section class="w-full rounded-lg border border-stone-200 bg-[#fffdf8] p-5 text-left shadow-2xl shadow-stone-950/15 sm:max-w-md">
+        <div class="mb-5 flex items-start justify-between gap-4">
+          <div>
+            <p class="text-sm font-medium uppercase tracking-[0.16em] text-[#7a5d3b]">Go to month</p>
+            <h2 class="mt-2 text-2xl font-semibold text-[#16251f]">Choose a date</h2>
+          </div>
+          <button
+            class="flex h-9 w-9 items-center justify-center rounded-md border border-stone-200 text-xl leading-none text-stone-500 transition hover:border-[#d4c6b3] hover:bg-[#f4efe6] hover:text-[#163c2f] focus:outline-none focus:ring-2 focus:ring-[#9fb5a9]"
+            type="button"
+            aria-label="Close month picker"
+            @click="isMonthPickerOpen = false"
+          >
+            &times;
+          </button>
+        </div>
+
+        <form class="space-y-4" @submit.prevent="goToPickedMonth">
+          <label class="block">
+            <span class="text-sm font-medium text-stone-700">Month</span>
+            <select
+              v-model="pickerMonth"
+              class="mt-2 w-full rounded-md border border-stone-200 bg-white px-3 py-2.5 text-[#16251f] outline-none transition focus:border-[#6f8f7a] focus:ring-4 focus:ring-[#dfe8e1]"
+            >
+              <option v-for="month in monthOptions" :key="month.value" :value="month.value">
+                {{ month.label }}
+              </option>
+            </select>
+          </label>
+
+          <label class="block">
+            <span class="text-sm font-medium text-stone-700">Year</span>
+            <input
+              v-model.number="pickerYear"
+              class="mt-2 w-full rounded-md border border-stone-200 bg-white px-3 py-2.5 text-[#16251f] outline-none transition focus:border-[#6f8f7a] focus:ring-4 focus:ring-[#dfe8e1]"
+              type="number"
+              min="1900"
+              max="2100"
+            />
+          </label>
+
+          <div class="flex gap-3 pt-2">
+            <button
+              class="flex-1 rounded-md border border-stone-200 px-4 py-2.5 font-medium text-stone-700 transition hover:bg-[#f4efe6] focus:outline-none focus:ring-2 focus:ring-stone-200"
+              type="button"
+              @click="isMonthPickerOpen = false"
+            >
+              Cancel
+            </button>
+            <button
+              class="flex-1 rounded-md bg-[#163c2f] px-4 py-2.5 font-semibold text-white transition hover:bg-[#0f2b22] focus:outline-none focus:ring-2 focus:ring-[#9fb5a9]"
+              type="submit"
+            >
+              Go
+            </button>
+          </div>
+        </form>
+      </section>
+    </div>
   </main>
 </template>
