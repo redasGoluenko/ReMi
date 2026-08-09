@@ -20,7 +20,8 @@ interface DateRow {
   id: string
   title: string
   description: string
-  date: string
+  date: string | null
+  is_idea: boolean
 }
 
 const mapRowToEvent = (row: DateRow): CalendarEvent => ({
@@ -28,9 +29,10 @@ const mapRowToEvent = (row: DateRow): CalendarEvent => ({
   title: row.title,
   description: row.description,
   date: row.date,
+  isIdea: row.is_idea,
 })
 
-const SELECT_COLUMNS = 'id, title, description, date'
+const SELECT_COLUMNS = 'id, title, description, date, is_idea'
 
 const readEvents = (): CalendarEvent[] => {
   const rawEvents = window.localStorage.getItem(STORAGE_KEY)
@@ -86,6 +88,7 @@ export const supabaseEventRepository: EventRepository = {
         title: event.title,
         description: event.description,
         date: event.date,
+        is_idea: event.isIdea,
       })
       .select(SELECT_COLUMNS)
       .single()
@@ -104,6 +107,7 @@ export const supabaseEventRepository: EventRepository = {
         title: event.title,
         description: event.description,
         date: event.date,
+        is_idea: event.isIdea,
       })
       .eq('id', event.id)
       .select(SELECT_COLUMNS)

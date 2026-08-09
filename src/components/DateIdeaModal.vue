@@ -3,51 +3,43 @@ import { computed, ref, watch } from 'vue'
 import type { CalendarEvent } from '../types/calendar'
 
 const props = defineProps<{
-  date: string
-  event: CalendarEvent | null
+  idea: CalendarEvent | null
 }>()
 
 const emit = defineEmits<{
   close: []
   delete: [id: string]
-  save: [event: CalendarEvent]
+  save: [idea: CalendarEvent]
 }>()
 
 const title = ref('')
 const description = ref('')
+const date = ref('')
 
-const formattedDate = computed(() =>
-  new Intl.DateTimeFormat('en', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  }).format(new Date(`${props.date}T12:00:00`)),
-)
-
-const isEditing = computed(() => Boolean(props.event))
+const isEditing = computed(() => Boolean(props.idea))
 const canSave = computed(() => title.value.trim().length > 0)
 
 watch(
-  () => props.event,
-  (event) => {
-    title.value = event?.title ?? ''
-    description.value = event?.description ?? ''
+  () => props.idea,
+  (idea) => {
+    title.value = idea?.title ?? ''
+    description.value = idea?.description ?? ''
+    date.value = idea?.date ?? ''
   },
   { immediate: true },
 )
 
-const saveEvent = () => {
+function saveIdea() {
   if (!canSave.value) {
     return
   }
 
   emit('save', {
-    id: props.event?.id ?? crypto.randomUUID(),
-    date: props.date,
+    id: props.idea?.id ?? crypto.randomUUID(),
+    date: date.value.trim() ? date.value : null,
     title: title.value.trim(),
     description: description.value.trim(),
-    isIdea: props.event?.isIdea ?? false,
+    isIdea: true,
   })
 }
 </script>
@@ -60,9 +52,9 @@ const saveEvent = () => {
     <section class="w-full rounded-lg border border-stone-200 bg-[#fffdf8] p-4 text-left shadow-2xl shadow-stone-950/15 sm:max-w-md md:max-w-lg lg:max-w-xl">
       <div class="mb-3 flex items-start justify-between gap-3 sm:mb-4">
         <div>
-          <p class="text-xs font-medium uppercase tracking-[0.16em] text-[#7a5d3b] sm:text-sm">{{ formattedDate }}</p>
+          <p class="text-xs font-medium uppercase tracking-[0.16em] text-[#7a5d3b] sm:text-sm">Date Ideas</p>
           <h2 class="mt-1 text-lg font-semibold text-[#16251f] sm:mt-2 sm:text-2xl">
-            {{ isEditing ? 'Edit event' : 'Add a date' }}
+            {{ isEditing ? 'Edit date idea' : 'Add date idea' }}
           </h2>
         </div>
         <button
@@ -75,14 +67,14 @@ const saveEvent = () => {
         </button>
       </div>
 
-      <form class="space-y-4" @submit.prevent="saveEvent">
+      <form class="space-y-4" @submit.prevent="saveIdea">
         <label class="block">
-          <span class="text-sm font-medium text-stone-700">Title</span>
+          <span class="text-sm font-medium text-stone-700">Idea title</span>
           <input
             v-model="title"
             class="mt-2 w-full rounded-md border border-stone-200 bg-white px-3 py-2.5 text-[#16251f] outline-none transition placeholder:text-stone-400 focus:border-[#6f8f7a] focus:ring-4 focus:ring-[#dfe8e1]"
             type="text"
-            placeholder="Dinner, walk, weekend plan..."
+            placeholder="Picnic, dinner, hike..."
             autocomplete="off"
           />
         </label>
@@ -91,19 +83,29 @@ const saveEvent = () => {
           <span class="text-sm font-medium text-stone-700">Description</span>
           <textarea
             v-model="description"
-            class="mt-2 min-h-32 w-full resize-y rounded-md border border-stone-200 bg-white px-3 py-2.5 text-[#16251f] outline-none transition placeholder:text-stone-400 focus:border-[#6f8f7a] focus:ring-4 focus:ring-[#dfe8e1]"
-            placeholder="Optional details."
+            class="mt-2 min-h-28 w-full resize-y rounded-md border border-stone-200 bg-white px-3 py-2.5 text-[#16251f] outline-none transition placeholder:text-stone-400 focus:border-[#6f8f7a] focus:ring-4 focus:ring-[#dfe8e1]"
+            placeholder="Optional notes."
           />
+        </label>
+
+        <label class="block">
+          <span class="text-sm font-medium text-stone-700">Date</span>
+          <input
+            v-model="date"
+            class="mt-2 w-full rounded-md border border-stone-200 bg-white px-3 py-2.5 text-[#16251f] outline-none transition focus:border-[#6f8f7a] focus:ring-4 focus:ring-[#dfe8e1]"
+            type="date"
+          />
+          <p class="mt-2 text-xs text-stone-500">Leave this empty to keep it as a saved idea only.</p>
         </label>
 
         <p v-if="!canSave" class="text-sm text-stone-500">Title is required.</p>
 
         <div class="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
           <button
-            v-if="event"
+            v-if="idea"
             class="rounded-md border border-red-200 px-4 py-2.5 font-medium text-red-700 transition hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-200"
             type="button"
-            @click="emit('delete', event.id)"
+            @click="emit('delete', idea.id)"
           >
             Delete
           </button>
@@ -121,7 +123,7 @@ const saveEvent = () => {
               type="submit"
               :disabled="!canSave"
             >
-              Save
+              Save idea
             </button>
           </div>
         </div>

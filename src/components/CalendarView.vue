@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import EventModal from './EventModal.vue'
+import DateIdeaModal from './DateIdeaModal.vue'
 import { supabaseEventRepository } from '../services/eventStorage'
 import type { CalendarEvent } from '../types/calendar'
 
@@ -18,16 +19,20 @@ const events = ref<CalendarEvent[]>([])
 const selectedDate = ref(toDateKey(today))
 const editingEvent = ref<CalendarEvent | null>(null)
 const isModalOpen = ref(false)
+const isIdeaModalOpen = ref(false)
 const isMonthPickerOpen = ref(false)
 const isLoggedDatesOpen = ref(false)
+const isIdeasOpen = ref(false)
 const isLoadingEvents = ref(false)
 const isSavingEvent = ref(false)
 const isDeletingEvent = ref(false)
 const loadError = ref('')
 const toastMessage = ref('')
 const loggedDatesMenu = ref<HTMLElement | null>(null)
+const ideasMenu = ref<HTMLElement | null>(null)
 const pickerMonth = ref(currentMonth.value.getMonth())
 const pickerYear = ref(currentMonth.value.getFullYear())
+const editingIdea = ref<CalendarEvent | null>(null)
 let toastTimeoutId: number | undefined
 let isClosingDatesMenu = false
 
@@ -56,6 +61,10 @@ const loggedDates = computed(() => {
   const eventsByDate = new Map<string, CalendarEvent[]>()
 
   for (const event of events.value) {
+    if (!event.date) {
+      continue
+    }
+
     eventsByDate.set(event.date, [...(eventsByDate.get(event.date) ?? []), event])
   }
 
@@ -67,6 +76,21 @@ const loggedDates = computed(() => {
     }))
     .sort((first, second) => first.date.localeCompare(second.date))
 })
+
+const dateIdeas = computed(() =>
+  events.value
+    .filter((event) => event.isIdea)
+    .sort((first, second) => {
+      const firstDate = first.date ?? '9999-12-31'
+      const secondDate = second.date ?? '9999-12-31'
+
+      if (firstDate !== secondDate) {
+        return firstDate.localeCompare(secondDate)
+      }
+
+      return first.title.localeCompare(second.title)
+    }),
+)
 
 const calendarDays = computed<CalendarDay[]>(() => {
   const year = currentMonth.value.getFullYear()
@@ -128,6 +152,14 @@ function goToToday() {
   currentMonth.value = new Date(today.getFullYear(), today.getMonth(), 1)
 }
 
+function openDateIdeas() {
+  if (isLoggedDatesOpen.value || isMonthPickerOpen.value) {
+    return
+  }
+
+  isIdeasOpen.value = !isIdeasOpen.value
+}
+
 function openMonthPicker() {
   if (isLoggedDatesOpen.value) {
     return
@@ -175,18 +207,32 @@ function goToLoggedDate(date: string) {
   }
 }
 
+function openIdeaModal(idea: CalendarEvent | null = null) {
+  if (isClosingDatesMenu || isLoggedDatesOpen.value) {
+    return
+  }
+
+  editingIdea.value = idea ? { ...idea } : null
+  isIdeaModalOpen.value = true
+  isIdeasOpen.value = false
+}
+
 function closeLoggedDatesOnOutsideClick(event: MouseEvent) {
-  if (!isLoggedDatesOpen.value) {
+  if (!isLoggedDatesOpen.value && !isIdeasOpen.value) {
     return
   }
 
   const target = event.target
 
-  if (target instanceof Node && loggedDatesMenu.value?.contains(target)) {
+  if (
+    target instanceof Node &&
+    (loggedDatesMenu.value?.contains(target) || ideasMenu.value?.contains(target))
+  ) {
     return
   }
 
   isLoggedDatesOpen.value = false
+  isIdeasOpen.value = false
   isClosingDatesMenu = true
   
   setTimeout(() => {
@@ -195,7 +241,7 @@ function closeLoggedDatesOnOutsideClick(event: MouseEvent) {
 }
 
 function openNewEvent(date = selectedDate.value) {
-  if (isClosingDatesMenu || isLoggedDatesOpen.value) {
+  if (isClosingDatesMenu || isLoggedDatesOpen.value || isIdeasOpen.value) {
     return
   }
 
@@ -213,7 +259,7 @@ function openNewEvent(date = selectedDate.value) {
 }
 
 function openExistingEvent(event: CalendarEvent) {
-  selectedDate.value = event.date
+  selectedDate.value = event.date ?? selectedDate.value
   editingEvent.value = { ...event }
   isModalOpen.value = true
 }
@@ -228,6 +274,10 @@ function showToast(message: string) {
   toastTimeoutId = window.setTimeout(() => {
     toastMessage.value = ''
   }, 2000)
+}
+
+function showIdeaToast(message: string) {
+  showToast(message)
 }
 
 function dismissToast() {
@@ -329,6 +379,62 @@ async function deleteEvent(id: string) {
   } finally {
     isDeletingEvent.value = false
   }
+}
+
+async function saveIdea(idea: CalendarEvent) {
+  if (isSavingEvent.value || isDeletingEvent.value) {
+    return
+  }
+
+  const storedIdea = events.value.find((stored) => stored.id === idea.id)
+  const isUpdate = Boolean(storedIdea)
+
+  if (isUpdate) {
+    const unchanged =
+      storedIdea!.title === idea.title &&
+      storedIdea!.description === idea.description &&
+      storedIdea!.date === idea.date &&
+      storedIdea!.isIdea === idea.isIdea
+
+    if (unchanged) {
+      isIdeaModalOpen.value = false
+      return
+    }
+  }
+
+  isSavingEvent.value = true
+
+  try {
+    const savedIdea = isUpdate
+      ? await supabaseEventRepository.update(idea)
+      : await supabaseEventRepository.create(idea)
+
+    if (isUpdate) {
+      const index = events.value.findIndex((stored) => stored.id === savedIdea.id)
+
+      if (index >= 0) {
+        events.value.splice(index, 1, savedIdea)
+      } else {
+        events.value.push(savedIdea)
+      }
+    } else {
+      events.value.push(savedIdea)
+    }
+
+    isIdeaModalOpen.value = false
+    loadError.value = ''
+    showIdeaToast(isUpdate ? 'Idea updated' : 'Idea saved')
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    showIdeaToast(`Could not save idea: ${message}`)
+  } finally {
+    isSavingEvent.value = false
+  }
+}
+
+async function deleteIdea(id: string) {
+  await deleteEvent(id)
+  isIdeaModalOpen.value = false
 }
 </script>
 
@@ -499,6 +605,48 @@ async function deleteEvent(id: string) {
             >
               Today
             </button>
+
+            <div ref="ideasMenu" class="relative mt-2">
+              <button
+                type="button"
+                class="w-full rounded-md border border-[#d7c8b5] bg-[#fffdf8] px-4 py-2.5 font-semibold text-[#163c2f] transition hover:bg-[#f4efe6] focus:outline-none focus:ring-2 focus:ring-[#9fb5a9] sm:py-3"
+                @click="openDateIdeas"
+              >
+                Date ideas
+              </button>
+
+              <div
+                v-if="isIdeasOpen"
+                class="absolute bottom-full left-0 z-30 mb-2 w-full rounded-lg border border-[#d7c8b5] bg-[#fffdf8] p-2 text-left shadow-xl shadow-stone-950/10"
+              >
+                <p v-if="dateIdeas.length === 0" class="px-3 py-4 text-sm text-stone-500">
+                  No date ideas yet.
+                </p>
+
+                <template v-else>
+                  <button
+                    v-for="idea in dateIdeas"
+                    :key="idea.id"
+                    type="button"
+                    class="w-full rounded-md px-3 py-2.5 text-left transition hover:bg-[#f4efe6] focus:outline-none focus:ring-2 focus:ring-[#9fb5a9]"
+                    @click="openIdeaModal(idea)"
+                  >
+                    <span class="block text-sm font-semibold text-[#16251f]">{{ idea.title }}</span>
+                    <span class="mt-0.5 block truncate text-xs text-stone-500">
+                      {{ idea.date ? formatDate(idea.date) : 'Set a date' }}
+                    </span>
+                  </button>
+                </template>
+
+                <button
+                  type="button"
+                  class="mt-2 w-full rounded-md border border-stone-200 px-3 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-[#f4efe6] focus:outline-none focus:ring-2 focus:ring-[#9fb5a9]"
+                  @click="openIdeaModal()"
+                >
+                  Add date idea
+                </button>
+              </div>
+            </div>
           </div>
       </section>
     </div>
@@ -510,6 +658,14 @@ async function deleteEvent(id: string) {
       @close="isModalOpen = false"
       @delete="deleteEvent"
       @save="saveEvent"
+    />
+
+    <DateIdeaModal
+      v-if="isIdeaModalOpen"
+      :idea="editingIdea"
+      @close="isIdeaModalOpen = false"
+      @delete="deleteIdea"
+      @save="saveIdea"
     />
 
     <div
