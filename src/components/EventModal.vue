@@ -56,11 +56,11 @@ const saveEvent = () => {
     class="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/35 p-3 backdrop-blur-sm"
     @click.self="emit('close')"
   >
-    <section class="w-full rounded-lg border border-stone-200 bg-[#fffdf8] p-5 text-left shadow-2xl shadow-stone-950/15 sm:max-w-lg sm:p-6">
-      <div class="mb-5 flex items-start justify-between gap-4">
+    <section class="w-full rounded-lg border border-stone-200 bg-[#fffdf8] p-4 text-left shadow-2xl shadow-stone-950/15 sm:max-w-md md:max-w-lg lg:max-w-xl">
+      <div class="mb-3 flex items-start justify-between gap-3 sm:mb-4">
         <div>
-          <p class="text-sm font-medium uppercase tracking-[0.16em] text-[#7a5d3b]">{{ formattedDate }}</p>
-          <h2 class="mt-2 text-2xl font-semibold text-[#16251f]">
+          <p class="text-xs font-medium uppercase tracking-[0.16em] text-[#7a5d3b] sm:text-sm">{{ formattedDate }}</p>
+          <h2 class="mt-1 text-lg font-semibold text-[#16251f] sm:mt-2 sm:text-2xl">
             {{ isEditing ? 'Edit event' : 'Add a date' }}
           </h2>
         </div>

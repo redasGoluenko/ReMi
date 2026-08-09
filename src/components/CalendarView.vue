@@ -120,6 +120,10 @@ function moveMonth(direction: number) {
   )
 }
 
+function goToToday() {
+  currentMonth.value = new Date(today.getFullYear(), today.getMonth(), 1)
+}
+
 function openMonthPicker() {
   if (isLoggedDatesOpen.value) {
     return
@@ -245,7 +249,6 @@ function saveEvent(event: CalendarEvent) {
       isModalOpen.value = false
       isLoggedDatesOpen.value = false
       isMonthPickerOpen.value = false
-        return
       return
     }
   }
@@ -295,9 +298,9 @@ function deleteEvent(id: string) {
       </div>
     </Transition>
 
-    <div class="mx-auto flex min-h-screen w-full max-w-5xl flex-col px-3 py-3 sm:px-6 sm:py-6">
+    <div class="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-2 pt-2 pb-0 sm:px-4 sm:pt-4 md:px-6 md:pt-6">
       <section class="relative flex-1 rounded-lg border border-[#d7c8b5] bg-[#fffdf8] shadow-sm shadow-stone-950/5">
-        <div class="flex items-center justify-between gap-2 border-b border-[#d7c8b5] p-3 sm:p-4">
+        <div class="flex items-center justify-between gap-1 border-b border-[#d7c8b5] p-2 sm:gap-2 sm:p-3 md:p-4">
           <button
             class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-stone-200 text-xl text-stone-600 transition hover:border-[#bca889] hover:bg-[#f4efe6] hover:text-[#163c2f] focus:outline-none focus:ring-2 focus:ring-[#9fb5a9]"
             type="button"
@@ -308,7 +311,7 @@ function deleteEvent(id: string) {
           </button>
 
           <button
-            class="min-w-0 flex-1 rounded-md px-2 py-2 text-center text-lg font-semibold text-[#16251f] transition hover:bg-[#f4efe6] focus:outline-none focus:ring-2 focus:ring-[#9fb5a9] sm:text-2xl"
+            class="min-w-0 flex-1 rounded-md px-2 py-1 text-center text-xs font-semibold text-[#16251f] transition hover:bg-[#f4efe6] focus:outline-none focus:ring-2 focus:ring-[#9fb5a9] sm:text-sm md:text-lg lg:text-2xl"
             type="button"
             @click="openMonthPicker"
           >
@@ -357,7 +360,7 @@ function deleteEvent(id: string) {
           </div>
         </div>
 
-          <div class="grid grid-cols-7 border-b border-[#d7c8b5] bg-[#f4efe6] text-center text-[0.65rem] font-semibold uppercase tracking-[0.08em] text-[#7a5d3b] sm:text-xs sm:tracking-[0.14em]">
+          <div class="grid grid-cols-7 border-b border-[#d7c8b5] bg-[#f4efe6] text-center text-[0.55rem] font-semibold uppercase tracking-[0.05em] text-[#7a5d3b] sm:text-[0.65rem] sm:tracking-[0.08em] md:text-xs md:tracking-[0.14em]">
             <div v-for="day in weekdayLabels" :key="day" class="py-3">{{ day }}</div>
           </div>
 
@@ -365,7 +368,7 @@ function deleteEvent(id: string) {
             <div
               v-for="day in calendarDays"
               :key="day.date"
-              class="min-h-16 cursor-pointer border-b border-r border-[#e3d8c9] p-1.5 text-left transition hover:bg-[#f4efe6] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#6f8f7a] sm:min-h-28 sm:p-3 [&:nth-child(7n)]:border-r-0"
+              class="min-h-12 cursor-pointer border-b border-r border-[#e3d8c9] p-1 text-left transition hover:bg-[#f4efe6] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#6f8f7a] sm:min-h-20 sm:p-2 md:min-h-24 md:p-2.5 lg:min-h-28 lg:p-3 [&:nth-child(7n)]:border-r-0"
               :class="[
                 day.events.length > 0
                   ? 'bg-[#e8efe9]'
@@ -380,14 +383,14 @@ function deleteEvent(id: string) {
               @keydown.enter.prevent="openNewEvent(day.date)"
               @keydown.space.prevent="openNewEvent(day.date)"
             >
-              <span class="flex items-center justify-between gap-2">
+              <span class="flex items-center justify-between gap-1 sm:gap-2">
                 <span
-                  class="flex h-6 w-6 items-center justify-center rounded-md text-xs font-semibold sm:h-7 sm:w-7 sm:text-sm"
+                  class="flex h-5 w-5 items-center justify-center rounded-md text-[0.6rem] font-semibold sm:h-6 sm:w-6 sm:text-xs md:h-7 md:w-7 md:text-sm"
                   :class="day.isToday ? 'bg-[#163c2f] text-white' : 'text-stone-700'"
                 >
                   {{ day.dayNumber }}
                 </span>
-                <span v-if="day.events.length" class="text-[0.65rem] font-medium text-[#163c2f] sm:text-xs">
+                <span v-if="day.events.length" class="text-[0.5rem] font-medium text-[#163c2f] sm:text-[0.65rem] md:text-xs">
                   {{ day.events.length }}
                 </span>
               </span>
@@ -413,6 +416,16 @@ function deleteEvent(id: string) {
               </span>
             </div>
           </div>
+
+          <div class="border-t border-[#d7c8b5] p-2 sm:p-3 md:p-4">
+            <button
+              type="button"
+              class="w-full rounded-md bg-[#163c2f] px-4 py-2.5 font-semibold text-white transition hover:bg-[#0f2b22] focus:outline-none focus:ring-2 focus:ring-[#9fb5a9] sm:py-3"
+              @click="goToToday"
+            >
+              Today
+            </button>
+          </div>
       </section>
     </div>
 
@@ -430,7 +443,7 @@ function deleteEvent(id: string) {
       class="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/35 p-3 backdrop-blur-sm"
       @click.self="isMonthPickerOpen = false"
     >
-      <section class="relative w-full rounded-lg border border-stone-200 bg-[#fffdf8] p-5 text-left shadow-2xl shadow-stone-950/15 sm:max-w-md">
+      <section class="relative w-full rounded-lg border border-stone-200 bg-[#fffdf8] p-4 text-left shadow-2xl shadow-stone-950/15 sm:max-w-md md:max-w-lg lg:max-w-xl">
         <button
           class="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-md border border-stone-200 text-xl leading-none text-stone-500 transition hover:border-[#d4c6b3] hover:bg-[#f4efe6] hover:text-[#163c2f] focus:outline-none focus:ring-2 focus:ring-[#9fb5a9]"
           type="button"
