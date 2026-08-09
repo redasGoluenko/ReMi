@@ -214,7 +214,6 @@ function openIdeaModal(idea: CalendarEvent | null = null) {
 
   editingIdea.value = idea ? { ...idea } : null
   isIdeaModalOpen.value = true
-  isIdeasOpen.value = false
 }
 
 function closeLoggedDatesOnOutsideClick(event: MouseEvent) {
@@ -439,7 +438,7 @@ async function deleteIdea(id: string) {
 </script>
 
 <template>
-  <main class="min-h-screen bg-[#f7f5ef] text-[#16251f]">
+  <main class="h-full bg-[#f7f5ef] text-[#16251f]">
     <Transition
       enter-active-class="transition duration-150 ease-out"
       enter-from-class="translate-y-2 opacity-0"
@@ -467,8 +466,8 @@ async function deleteIdea(id: string) {
       </div>
     </Transition>
 
-    <div class="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-2 pt-2 pb-0 sm:px-4 sm:pt-4 md:px-6 md:pt-6">
-      <section class="relative flex-1 rounded-lg border border-[#d7c8b5] bg-[#fffdf8] shadow-sm shadow-stone-950/5">
+    <div class="mx-auto flex h-full w-full max-w-6xl flex-col px-2 pt-2 pb-0 sm:px-4 sm:pt-4 md:px-6 md:pt-6">
+      <section class="relative flex h-full min-h-0 flex-1 flex-col rounded-lg border border-[#d7c8b5] bg-[#fffdf8] shadow-sm shadow-stone-950/5">
         <div class="flex items-center justify-between gap-1 border-b border-[#d7c8b5] p-2 sm:gap-2 sm:p-3 md:p-4">
           <button
             class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-stone-200 text-xl text-stone-600 transition hover:border-[#bca889] hover:bg-[#f4efe6] hover:text-[#163c2f] focus:outline-none focus:ring-2 focus:ring-[#9fb5a9]"
@@ -539,15 +538,16 @@ async function deleteIdea(id: string) {
           </div>
         </div>
 
+        <div class="flex min-h-0 flex-1 flex-col">
           <div class="grid grid-cols-7 border-b border-[#d7c8b5] bg-[#f4efe6] text-center text-[0.55rem] font-semibold uppercase tracking-[0.05em] text-[#7a5d3b] sm:text-[0.65rem] sm:tracking-[0.08em] md:text-xs md:tracking-[0.14em]">
             <div v-for="day in weekdayLabels" :key="day" class="py-3">{{ day }}</div>
           </div>
 
-          <div class="grid grid-cols-7">
+          <div class="grid flex-1 grid-cols-7 grid-rows-6 min-h-0">
             <div
               v-for="day in calendarDays"
               :key="day.date"
-              class="min-h-12 cursor-pointer border-b border-r border-[#e3d8c9] p-1 text-left transition hover:bg-[#f4efe6] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#6f8f7a] sm:min-h-20 sm:p-2 md:min-h-24 md:p-2.5 lg:min-h-28 lg:p-3 [&:nth-child(7n)]:border-r-0"
+              class="min-h-0 cursor-pointer border-b border-r border-[#e3d8c9] p-1 text-left transition hover:bg-[#f4efe6] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#6f8f7a] sm:p-2 md:p-2.5 lg:p-3 [&:nth-child(7n)]:border-r-0"
               :class="[
                 day.events.length > 0
                   ? 'bg-[#e8efe9]'
@@ -596,7 +596,7 @@ async function deleteIdea(id: string) {
             </div>
           </div>
 
-          <div class="border-t border-[#d7c8b5] p-2 sm:p-3 md:p-4">
+          <div class="mt-auto border-t border-[#d7c8b5] p-2 sm:p-3 md:p-4">
             <p v-if="isLoadingEvents" class="mb-2 text-center text-sm text-stone-600">Loading dates...</p>
             <button
               type="button"
@@ -617,7 +617,7 @@ async function deleteIdea(id: string) {
 
               <div
                 v-if="isIdeasOpen"
-                class="fixed inset-x-2 top-24 bottom-24 z-30 overflow-y-auto overscroll-contain rounded-lg border border-[#d7c8b5] bg-[#fffdf8] p-2 text-left shadow-xl shadow-stone-950/10 sm:absolute sm:inset-x-0 sm:bottom-full sm:top-auto sm:mb-2 sm:w-full sm:max-h-[calc(100vh-14rem)]"
+                class="fixed inset-x-0 top-16 bottom-0 z-30 overflow-y-auto overscroll-contain rounded-t-2xl border-t border-[#d7c8b5] bg-[#fffdf8] p-2 text-left shadow-xl shadow-stone-950/10 sm:absolute sm:inset-x-0 sm:bottom-full sm:top-auto sm:mb-2 sm:w-full sm:max-h-[calc(100vh-14rem)] sm:rounded-lg sm:border sm:border-[#d7c8b5]"
               >
                 <p v-if="dateIdeas.length === 0" class="px-3 py-4 text-sm text-stone-500">
                   No date ideas yet.
@@ -645,9 +645,18 @@ async function deleteIdea(id: string) {
                 >
                   Add date idea
                 </button>
+
+                <button
+                  type="button"
+                  class="mt-2 w-full rounded-md border border-stone-200 px-3 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-[#f4efe6] focus:outline-none focus:ring-2 focus:ring-[#9fb5a9]"
+                  @click="isIdeasOpen = false"
+                >
+                  Close
+                </button>
               </div>
             </div>
           </div>
+        </div>
       </section>
     </div>
 

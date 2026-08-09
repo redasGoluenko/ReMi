@@ -128,8 +128,8 @@ defineExpose({
 </script>
 
 <template>
-  <main class="min-h-screen bg-[#f7f5ef] text-[#16251f]">
-    <div class="mx-auto flex min-h-screen w-full max-w-3xl items-center justify-center px-4 py-8 sm:px-6">
+  <main class="min-h-dvh bg-[#f7f5ef] text-[#16251f]">
+    <div class="mx-auto flex min-h-dvh w-full max-w-3xl items-center justify-center px-4 py-8 sm:px-6">
       <section class="w-full rounded-lg border border-[#d7c8b5] bg-[#fffdf8] p-6 shadow-xl shadow-stone-950/10 sm:p-8">
         <p class="text-xs font-semibold uppercase tracking-[0.18em] text-[#7a5d3b]">Remi</p>
         <h1 class="mt-2 text-3xl font-semibold text-[#163c2f] sm:text-4xl">Enter Couple PIN</h1>

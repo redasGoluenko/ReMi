@@ -116,7 +116,7 @@ function saveIdea() {
               type="button"
               @click="emit('close')"
             >
-              Cancel
+              Close
             </button>
             <button
               class="flex-1 rounded-md bg-[#163c2f] px-4 py-2.5 font-semibold text-white transition hover:bg-[#0f2b22] focus:outline-none focus:ring-2 focus:ring-[#9fb5a9] disabled:cursor-not-allowed disabled:bg-stone-300 sm:flex-none"
