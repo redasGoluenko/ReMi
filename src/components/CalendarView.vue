@@ -379,7 +379,7 @@ function deleteEvent(id: string) {
               class="mt-2 w-full rounded-md border border-stone-200 bg-white px-3 py-2.5 text-[#16251f] outline-none transition focus:border-[#6f8f7a] focus:ring-4 focus:ring-[#dfe8e1]"
             >
               <option v-for="month in monthOptions" :key="month.value" :value="month.value">
-                {{ month.label }}
+                {{ month.label }}{{ month.value === currentMonth.getMonth() ? ' (current)' : '' }}
               </option>
             </select>
           </label>
