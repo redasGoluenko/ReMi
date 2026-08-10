@@ -662,7 +662,7 @@ async function deleteIdea(id: string) {
             class="group min-h-0 cursor-pointer border-b border-r border-[#eadbc7] p-2 text-left transition hover:bg-[#efdfc8]/75 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#b88a44] sm:p-2.5 lg:p-3 [&:nth-child(7n)]:border-r-0"
             :class="[
               day.events.length > 0
-                ? 'bg-[#e7ddc7] ring-1 ring-inset ring-[#cfb58e] shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]'
+                ? 'bg-[#e2d2b3] ring-2 ring-inset ring-[#d7c8a6] shadow-[inset_0_1px_0_rgba(255,255,255,0.3)]'
                 : day.isCurrentMonth
                   ? 'bg-transparent'
                   : 'bg-[#f4eee4]/70 text-[#9a8f81]',
