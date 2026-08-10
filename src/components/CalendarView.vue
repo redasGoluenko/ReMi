@@ -17,6 +17,7 @@ const today = new Date()
 const currentMonth = ref(new Date(today.getFullYear(), today.getMonth(), 1))
 const events = ref<CalendarEvent[]>([])
 const selectedDate = ref(toDateKey(today))
+const modalDate = ref(toDateKey(today))
 const editingEvent = ref<CalendarEvent | null>(null)
 const isModalOpen = ref(false)
 const isIdeaModalOpen = ref(false)
@@ -33,32 +34,47 @@ const ideasMenu = ref<HTMLElement | null>(null)
 const pickerMonth = ref(currentMonth.value.getMonth())
 const pickerYear = ref(currentMonth.value.getFullYear())
 const editingIdea = ref<CalendarEvent | null>(null)
+const relationshipStart = new Date('2026-07-11T00:00:00')
+const relationshipDuration = ref('')
+let relationshipIntervalId: number | undefined
 let toastTimeoutId: number | undefined
 let isClosingDatesMenu = false
 let touchStartX = 0
 let touchStartY = 0
 let touchStartTime = 0
 
-const weekdayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+const weekdayLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 const monthOptions = Array.from({ length: 12 }, (_, index) => ({
   value: index,
-  shortLabel: `${String(index + 1).padStart(2, '0')} - ${new Intl.DateTimeFormat('en', {
-    month: 'short',
-  }).format(new Date(2026, index, 1))}`,
-  label: new Intl.DateTimeFormat('en', {
-    month: 'long',
-  }).format(new Date(2026, index, 1)),
+  shortLabel: `${String(index + 1).padStart(2, '0')} - ${formatBilingualMonth(new Date(2026, index, 1), 'short')}`,
+  label: formatBilingualMonth(new Date(2026, index, 1)),
 }))
 
 const monthLabel = computed(() =>
-  `${String(currentMonth.value.getMonth() + 1).padStart(2, '0')} - ${new Intl.DateTimeFormat(
-    'en',
-    {
-      month: 'long',
-      year: 'numeric',
-    },
-  ).format(currentMonth.value)}`,
+  `${formatBilingualMonth(currentMonth.value)} ${currentMonth.value.getFullYear()}`,
 )
+
+function updateRelationshipDuration() {
+  const now = new Date()
+  let years = now.getFullYear() - relationshipStart.getFullYear()
+  let months = now.getMonth() - relationshipStart.getMonth()
+  let days = now.getDate() - relationshipStart.getDate()
+
+  if (days < 0) {
+    const previousMonth = new Date(now.getFullYear(), now.getMonth(), 0)
+    days += previousMonth.getDate()
+    months -= 1
+  }
+
+  if (months < 0) {
+    months += 12
+    years -= 1
+  }
+
+  const totalMonths = years * 12 + months
+
+  relationshipDuration.value = `${totalMonths} months • ${days} days`
+}
 
 const loggedDates = computed(() => {
   const eventsByDate = new Map<string, CalendarEvent[]>()
@@ -119,12 +135,18 @@ const calendarDays = computed<CalendarDay[]>(() => {
 })
 
 onMounted(async () => {
+  updateRelationshipDuration()
+  relationshipIntervalId = window.setInterval(updateRelationshipDuration, 60_000)
   await loadEvents()
   document.addEventListener('click', closeLoggedDatesOnOutsideClick)
 })
 
 onBeforeUnmount(() => {
   document.removeEventListener('click', closeLoggedDatesOnOutsideClick)
+
+  if (relationshipIntervalId) {
+    window.clearInterval(relationshipIntervalId)
+  }
 
   if (toastTimeoutId) {
     window.clearTimeout(toastTimeoutId)
@@ -246,11 +268,24 @@ function isActualCurrentMonth(month: number): boolean {
 }
 
 function formatDate(date: string): string {
-  return new Intl.DateTimeFormat('en', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  }).format(new Date(`${date}T12:00:00`))
+  const targetDate = new Date(`${date}T12:00:00`)
+  const englishMonth = new Intl.DateTimeFormat('en', { month: 'short' }).format(targetDate)
+  const lithuanianMonth = new Intl.DateTimeFormat('lt', { month: 'short' }).format(targetDate)
+  const day = new Intl.DateTimeFormat('en', { day: 'numeric' }).format(targetDate)
+  const year = new Intl.DateTimeFormat('en', { year: 'numeric' }).format(targetDate)
+
+  return `${englishMonth} (${lithuanianMonth}) ${day}, ${year}`
+}
+
+function formatBilingualMonth(date: Date, monthStyle: Intl.DateTimeFormatOptions['month'] = 'long') {
+  const englishMonth = new Intl.DateTimeFormat('en', {
+    month: monthStyle,
+  }).format(date)
+  const lithuanianMonth = new Intl.DateTimeFormat('lt', {
+    month: 'long',
+  }).format(date)
+
+  return `${englishMonth} (${lithuanianMonth})`
 }
 
 function goToLoggedDate(date: string) {
@@ -303,7 +338,7 @@ function openNewEvent(date = selectedDate.value) {
     return
   }
 
-  selectedDate.value = date
+  modalDate.value = date
 
   const eventToEdit = events.value.find((event) => event.date === date)
 
@@ -317,7 +352,7 @@ function openNewEvent(date = selectedDate.value) {
 }
 
 function openExistingEvent(event: CalendarEvent) {
-  selectedDate.value = event.date ?? selectedDate.value
+  modalDate.value = event.date ?? selectedDate.value
   editingEvent.value = { ...event }
   isModalOpen.value = true
 }
@@ -494,10 +529,10 @@ async function deleteIdea(id: string) {
   await deleteEvent(id)
   isIdeaModalOpen.value = false
 }
-</script>
+  </script>
 
-<template>
-  <main class="h-full bg-[#f7f5ef] text-[#16251f]">
+  <template>
+  <main class="relative h-full overflow-hidden text-[#f7ebd7]">
     <Transition
       enter-active-class="transition duration-150 ease-out"
       enter-from-class="translate-y-2 opacity-0"
@@ -508,14 +543,14 @@ async function deleteIdea(id: string) {
     >
       <div v-if="toastMessage" class="fixed left-1/2 bottom-6 z-[60] w-[calc(100%-1.5rem)] max-w-sm -translate-x-1/2">
         <div
-          class="flex items-center justify-between rounded-md border border-[#d7c8b5] bg-[#fffdf8] px-4 py-3 text-sm font-medium text-[#16251f] shadow-xl shadow-stone-950/10"
+          class="flex items-center justify-between rounded-full border border-[#ead9c6]/80 bg-[#f7eddc]/95 px-4 py-3 text-sm font-medium text-[#2f261b] shadow-2xl shadow-black/25 backdrop-blur"
           role="status"
           aria-live="polite"
         >
           <div class="mr-3 flex-1 text-left text-sm">{{ toastMessage }}</div>
           <button
             type="button"
-            class="ml-2 inline-flex h-8 w-8 items-center justify-center rounded-md border border-stone-200 text-sm text-stone-600 transition hover:bg-[#f4efe6] focus:outline-none focus:ring-2 focus:ring-[#9fb5a9]"
+            class="ml-2 inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#d8c3a6] text-sm text-[#70543a] transition hover:bg-[#efe1cc] focus:outline-none focus:ring-2 focus:ring-[#b79460]"
             aria-label="Dismiss notification"
             @click="dismissToast"
           >
@@ -525,165 +560,180 @@ async function deleteIdea(id: string) {
       </div>
     </Transition>
 
-    <div class="mx-auto flex h-full w-full max-w-6xl flex-col px-2 pt-2 pb-0 sm:px-4 sm:pt-4 md:px-6 md:pt-6">
+    <div class="relative z-10 mx-auto flex h-full w-full max-w-5xl flex-col px-3 py-4 sm:px-5 sm:py-6 lg:px-8 lg:py-8">
+      <header class="mb-5 pt-1 text-center text-[#f7ebd7] sm:mb-6 lg:mb-8">
+        <div class="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-full border border-[#cfab6a]/60 bg-[#1f2e1f]/35 text-[#cfab6a] shadow-lg shadow-black/20 backdrop-blur-sm">
+          <span class="text-xl leading-none">❦</span>
+        </div>
+
+        <h1 class="text-4xl leading-none tracking-[0.01em] drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)] sm:text-5xl lg:text-6xl">
+          Redas &amp; Miglė
+        </h1>
+
+        <p class="mt-2 text-sm font-medium tracking-[0.08em] text-[#efe0c8]/75 sm:text-base">
+          {{ relationshipDuration }}
+        </p>
+      </header>
+
+      <div class="mb-4 flex items-center justify-between gap-3 text-[#f7ebd7] sm:mb-5">
+        <button
+          class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#d9c6ab]/55 bg-[#1d2419]/35 text-2xl text-[#f4e9d6] shadow-lg shadow-black/15 backdrop-blur-sm transition hover:border-[#e0caa5] hover:bg-[#2a3525]/45 focus:outline-none focus:ring-2 focus:ring-[#d5b376]"
+          type="button"
+          aria-label="Previous month"
+          @click="moveMonth(-1)"
+        >
+          &lsaquo;
+        </button>
+
+        <button
+          class="min-w-0 flex-1 rounded-full px-3 py-1 text-center text-2xl font-normal tracking-[0.01em] text-[#f7ebd7] drop-shadow-[0_2px_8px_rgba(0,0,0,0.28)] transition hover:text-white focus:outline-none focus:ring-2 focus:ring-[#d5b376] sm:text-3xl lg:text-[2.15rem]"
+          type="button"
+          @click="openMonthPicker"
+        >
+          {{ monthLabel }}
+        </button>
+
+        <button
+          class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#d9c6ab]/55 bg-[#1d2419]/35 text-2xl text-[#f4e9d6] shadow-lg shadow-black/15 backdrop-blur-sm transition hover:border-[#e0caa5] hover:bg-[#2a3525]/45 focus:outline-none focus:ring-2 focus:ring-[#d5b376]"
+          type="button"
+          aria-label="Next month"
+          @click="moveMonth(1)"
+        >
+          &rsaquo;
+        </button>
+
+        <div ref="loggedDatesMenu" class="relative ml-1">
+          <button
+            class="rounded-full border border-[#f1e4d1]/70 bg-[#f5e9db] px-4 py-3 text-sm font-medium text-[#4d3725] shadow-lg shadow-black/15 transition hover:bg-[#fff4e5] focus:outline-none focus:ring-2 focus:ring-[#d5b376] sm:px-5 sm:text-base"
+            type="button"
+            @click="isLoggedDatesOpen = !isLoggedDatesOpen"
+          >
+            ♡ Our Dates
+          </button>
+
+          <div
+            v-if="isLoggedDatesOpen"
+            class="absolute right-0 top-14 z-20 max-h-80 w-72 overflow-y-auto rounded-[1.5rem] border border-[#e7d1b5]/85 bg-[#f7eddc]/97 p-2 text-left shadow-2xl shadow-black/20 backdrop-blur-sm"
+          >
+            <p v-if="isLoadingEvents" class="px-3 py-4 text-sm text-[#6e5a46]">
+              Loading dates...
+            </p>
+
+            <p v-else-if="loadError" class="px-3 py-4 text-sm text-red-800">
+              {{ loadError }}
+            </p>
+
+            <p v-else-if="loggedDates.length === 0" class="px-3 py-4 text-sm text-[#6e5a46]">
+              No dates logged yet.
+            </p>
+
+            <template v-else>
+              <button
+                v-for="loggedDate in loggedDates"
+                :key="loggedDate.date"
+                class="w-full rounded-2xl px-3 py-2.5 text-left transition hover:bg-[#efe0ca] focus:outline-none focus:ring-2 focus:ring-[#c9a369]"
+                type="button"
+                @click="goToLoggedDate(loggedDate.date)"
+              >
+                <span class="block text-sm font-semibold text-[#332519]">{{ loggedDate.label }}</span>
+                <span class="mt-0.5 block truncate text-xs text-[#7a6754]">
+                  {{ loggedDate.events.map((event) => event.title).join(', ') }}
+                </span>
+              </button>
+            </template>
+          </div>
+        </div>
+      </div>
+
       <section
-        class="relative flex h-full min-h-0 flex-1 flex-col rounded-lg border border-[#d7c8b5] bg-[#fffdf8] shadow-sm shadow-stone-950/5"
+        class="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-[2.25rem] border border-[#f0dfc4]/80 bg-[rgba(246,233,213,0.94)] shadow-[0_35px_90px_rgba(20,14,8,0.35)] backdrop-blur-[12px]"
         @touchstart.passive="handleSwipeStart"
         @touchend.passive="handleSwipeEnd"
         @touchcancel="handleSwipeCancel"
       >
-        <div class="flex items-center justify-between gap-1 border-b border-[#d7c8b5] p-2 sm:gap-2 sm:p-3 md:p-4">
-          <button
-            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-stone-200 text-xl text-stone-600 transition hover:border-[#bca889] hover:bg-[#f4efe6] hover:text-[#163c2f] focus:outline-none focus:ring-2 focus:ring-[#9fb5a9]"
-            type="button"
-            aria-label="Previous month"
-            @click="moveMonth(-1)"
+        <div class="grid grid-cols-7 border-b border-[#e3d1b8] bg-[#f0e2cd]/92 text-center text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-[#6e563a] sm:text-[0.8rem]">
+          <div v-for="day in weekdayLabels" :key="day" class="py-3 sm:py-4">{{ day }}</div>
+        </div>
+
+        <div class="grid flex-1 grid-cols-7 grid-rows-6 min-h-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.18),rgba(255,255,255,0.04))]">
+          <div
+            v-for="day in calendarDays"
+            :key="day.date"
+            class="group min-h-0 cursor-pointer border-b border-r border-[#eadbc7] p-2 text-left transition hover:bg-[#efdfc8]/75 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#b88a44] sm:p-2.5 lg:p-3 [&:nth-child(7n)]:border-r-0"
+            :class="[
+              day.events.length > 0
+                ? 'bg-[#e7ddc7] ring-1 ring-inset ring-[#cfb58e] shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]'
+                : day.isCurrentMonth
+                  ? 'bg-transparent'
+                  : 'bg-[#f4eee4]/70 text-[#9a8f81]',
+              selectedDate === day.date && !day.isToday ? 'ring-2 ring-inset ring-[#7b5c29]' : '',
+            ]"
+            role="button"
+            tabindex="0"
+            @click="openNewEvent(day.date)"
+            @keydown.enter.prevent="openNewEvent(day.date)"
+            @keydown.space.prevent="openNewEvent(day.date)"
           >
-            &lsaquo;
-          </button>
+            <span class="flex items-start justify-between gap-1 sm:gap-2">
+              <span
+                class="flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold transition sm:h-9 sm:w-9 sm:text-base"
+                :class="[
+                  day.isToday
+                    ? 'bg-[#254f2c] text-white shadow-md shadow-[#254f2c]/35'
+                    : selectedDate === day.date
+                      ? 'border-2 border-[#a17024] text-[#5f4415]'
+                      : day.isCurrentMonth
+                        ? 'text-[#2a2118] group-hover:bg-[#e9d6bb]'
+                        : 'text-[#9b9084]',
+                ]"
+              >
+                {{ day.dayNumber }}
+              </span>
 
-          <button
-            class="min-w-0 flex-1 rounded-md px-2 py-1 text-center text-xs font-semibold text-[#16251f] transition hover:bg-[#f4efe6] focus:outline-none focus:ring-2 focus:ring-[#9fb5a9] sm:text-sm md:text-lg lg:text-2xl"
-            type="button"
-            @click="openMonthPicker"
-          >
-            {{ monthLabel }}
-          </button>
+            </span>
 
-          <button
-            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-stone-200 text-xl text-stone-600 transition hover:border-[#bca889] hover:bg-[#f4efe6] hover:text-[#163c2f] focus:outline-none focus:ring-2 focus:ring-[#9fb5a9]"
-            type="button"
-            aria-label="Next month"
-            @click="moveMonth(1)"
-          >
-            &rsaquo;
-          </button>
-
-          <div ref="loggedDatesMenu" class="relative">
-            <button
-              class="ml-1 rounded-md border border-stone-200 px-3 py-2 text-sm font-medium text-stone-700 transition hover:border-[#bca889] hover:bg-[#f4efe6] focus:outline-none focus:ring-2 focus:ring-[#9fb5a9]"
-              type="button"
-              @click="isLoggedDatesOpen = !isLoggedDatesOpen"
-            >
-              Dates
-            </button>
-
-            <div
-              v-if="isLoggedDatesOpen"
-              class="absolute right-0 top-12 z-20 max-h-80 w-72 overflow-y-auto rounded-lg border border-[#d7c8b5] bg-[#fffdf8] p-2 text-left shadow-xl shadow-stone-950/10"
-            >
-              <p v-if="isLoadingEvents" class="px-3 py-4 text-sm text-stone-500">
-                Loading dates...
-              </p>
-
-              <p v-else-if="loadError" class="px-3 py-4 text-sm text-red-700">
-                {{ loadError }}
-              </p>
-
-              <p v-else-if="loggedDates.length === 0" class="px-3 py-4 text-sm text-stone-500">
-                No dates logged yet.
-              </p>
-
-              <template v-else>
-                <button
-                  v-for="loggedDate in loggedDates"
-                  :key="loggedDate.date"
-                  class="w-full rounded-md px-3 py-2.5 text-left transition hover:bg-[#f4efe6] focus:outline-none focus:ring-2 focus:ring-[#9fb5a9]"
-                  type="button"
-                  @click="goToLoggedDate(loggedDate.date)"
-                >
-                  <span class="block text-sm font-semibold text-[#16251f]">{{ loggedDate.label }}</span>
-                  <span class="mt-0.5 block truncate text-xs text-stone-500">
-                    {{ loggedDate.events.map((event) => event.title).join(', ') }}
-                  </span>
-                </button>
-              </template>
-            </div>
+            <span class="mt-3 hidden flex-col gap-1.5 sm:flex">
+              <button
+                v-for="event in day.events"
+                :key="event.id"
+                class="truncate rounded-full bg-[#e2d2bf]/95 px-2.5 py-1 text-left text-xs font-medium text-[#2d2118] transition hover:bg-[#d8c1a4] focus:outline-none focus:ring-2 focus:ring-[#9a6f2c]"
+                type="button"
+                @click.stop="openExistingEvent(event)"
+              >
+                {{ event.title }}
+              </button>
+            </span>
           </div>
         </div>
 
-        <div class="flex min-h-0 flex-1 flex-col">
-          <div class="grid grid-cols-7 border-b border-[#d7c8b5] bg-[#f4efe6] text-center text-[0.55rem] font-semibold uppercase tracking-[0.05em] text-[#7a5d3b] sm:text-[0.65rem] sm:tracking-[0.08em] md:text-xs md:tracking-[0.14em]">
-            <div v-for="day in weekdayLabels" :key="day" class="py-3">{{ day }}</div>
-          </div>
+        <div class="border-t border-[#e3d1b8] bg-[rgba(244,232,214,0.9)] p-3 sm:p-4 lg:p-5">
+          <p v-if="isLoadingEvents" class="mb-2 text-center text-sm text-[#6e5a46]">Loading dates...</p>
 
-          <div class="grid flex-1 grid-cols-7 grid-rows-6 min-h-0">
-            <div
-              v-for="day in calendarDays"
-              :key="day.date"
-              class="min-h-0 cursor-pointer border-b border-r border-[#e3d8c9] p-1 text-left transition hover:bg-[#f4efe6] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#6f8f7a] sm:p-2 md:p-2.5 lg:p-3 [&:nth-child(7n)]:border-r-0"
-              :class="[
-                day.events.length > 0
-                  ? 'bg-[#e8efe9]'
-                  : day.isCurrentMonth
-                    ? 'bg-[#fffdf8]'
-                    : 'bg-[#f1eee7] text-stone-400',
-                selectedDate === day.date ? 'ring-2 ring-inset ring-[#6f8f7a]' : '',
-              ]"
-              role="button"
-              tabindex="0"
-              @click="openNewEvent(day.date)"
-              @keydown.enter.prevent="openNewEvent(day.date)"
-              @keydown.space.prevent="openNewEvent(day.date)"
-            >
-              <span class="flex items-center justify-between gap-1 sm:gap-2">
-                <span
-                  class="flex h-5 w-5 items-center justify-center rounded-md text-[0.6rem] font-semibold sm:h-6 sm:w-6 sm:text-xs md:h-7 md:w-7 md:text-sm"
-                  :class="day.isToday ? 'bg-[#163c2f] text-white' : 'text-stone-700'"
-                >
-                  {{ day.dayNumber }}
-                </span>
-                <span v-if="day.events.length" class="text-[0.5rem] font-medium text-[#163c2f] sm:text-[0.65rem] md:text-xs">
-                  {{ day.events.length }}
-                </span>
-              </span>
-
-              <span v-if="day.events.length" class="mt-2 flex gap-1 sm:hidden">
-                <span
-                  v-for="event in day.events.slice(0, 3)"
-                  :key="event.id"
-                  class="h-1.5 w-1.5 rounded-full bg-[#163c2f]"
-                />
-              </span>
-
-              <span class="mt-3 hidden flex-col gap-1.5 sm:flex">
-                <button
-                  v-for="event in day.events"
-                  :key="event.id"
-                  class="truncate rounded-md bg-[#dfe8e1] px-2 py-1 text-left text-xs font-medium text-[#163c2f] transition hover:bg-[#cfddcf] focus:outline-none focus:ring-2 focus:ring-[#6f8f7a]"
-                  type="button"
-                  @click.stop="openExistingEvent(event)"
-                >
-                  {{ event.title }}
-                </button>
-              </span>
-            </div>
-          </div>
-
-          <div class="mt-auto border-t border-[#d7c8b5] p-2 sm:p-3 md:p-4">
-            <p v-if="isLoadingEvents" class="mb-2 text-center text-sm text-stone-600">Loading dates...</p>
+          <div class="grid gap-3 sm:grid-cols-2">
             <button
               type="button"
-              class="w-full rounded-md bg-[#163c2f] px-4 py-2.5 font-semibold text-white transition hover:bg-[#0f2b22] focus:outline-none focus:ring-2 focus:ring-[#9fb5a9] sm:py-3"
+              class="flex items-center justify-center gap-3 rounded-[1.4rem] border border-[#e3d1b8] bg-[#f5ead9] px-4 py-4 text-lg font-medium text-[#2f251b] shadow-sm transition hover:bg-[#f0dfc8] focus:outline-none focus:ring-2 focus:ring-[#b88a44]"
               @click="goToToday"
             >
-              Today
+              <span class="text-2xl leading-none text-[#2f6b3d]">☼</span>
+              <span>Today</span>
             </button>
 
-            <div ref="ideasMenu" class="relative mt-2">
+            <div ref="ideasMenu" class="relative">
               <button
                 type="button"
-                class="w-full rounded-md border border-[#d7c8b5] bg-[#fffdf8] px-4 py-2.5 font-semibold text-[#163c2f] transition hover:bg-[#f4efe6] focus:outline-none focus:ring-2 focus:ring-[#9fb5a9] sm:py-3"
+                class="flex w-full items-center justify-center gap-3 rounded-[1.4rem] border border-[#2f6b3d] bg-[#244f2f] px-4 py-4 text-lg font-medium text-[#f7eddc] shadow-sm transition hover:bg-[#1f4328] focus:outline-none focus:ring-2 focus:ring-[#d5b376]"
                 @click="openDateIdeas"
               >
-                Date ideas
+                <span class="text-xl leading-none text-[#f3dca6]">☗</span>
+                <span>Date Ideas</span>
               </button>
 
               <div
                 v-if="isIdeasOpen"
-                class="fixed inset-x-0 top-16 bottom-0 z-30 overflow-y-auto overscroll-contain rounded-t-2xl border-t border-[#d7c8b5] bg-[#fffdf8] p-2 text-left shadow-xl shadow-stone-950/10 sm:absolute sm:inset-x-0 sm:bottom-full sm:top-auto sm:mb-2 sm:w-full sm:max-h-[calc(100vh-14rem)] sm:rounded-lg sm:border sm:border-[#d7c8b5]"
+                class="fixed inset-x-0 top-16 bottom-0 z-30 overflow-y-auto overscroll-contain rounded-t-[2rem] border-t border-[#e3d1b8] bg-[#f7eddc] p-2 text-left shadow-2xl shadow-black/20 sm:absolute sm:inset-x-0 sm:bottom-full sm:top-auto sm:mb-2 sm:w-full sm:max-h-[calc(100vh-14rem)] sm:rounded-[1.5rem] sm:border sm:border-[#e3d1b8]"
               >
-                <p v-if="dateIdeas.length === 0" class="px-3 py-4 text-sm text-stone-500">
+                <p v-if="dateIdeas.length === 0" class="px-3 py-4 text-sm text-[#6e5a46]">
                   No date ideas yet.
                 </p>
 
@@ -692,11 +742,11 @@ async function deleteIdea(id: string) {
                     v-for="idea in dateIdeas"
                     :key="idea.id"
                     type="button"
-                    class="w-full rounded-md px-3 py-2.5 text-left transition hover:bg-[#f4efe6] focus:outline-none focus:ring-2 focus:ring-[#9fb5a9]"
+                    class="w-full rounded-2xl px-3 py-2.5 text-left transition hover:bg-[#eee0cd] focus:outline-none focus:ring-2 focus:ring-[#b88a44]"
                     @click="openIdeaModal(idea)"
                   >
-                    <span class="block text-sm font-semibold text-[#16251f]">{{ idea.title }}</span>
-                    <span class="mt-0.5 block truncate text-xs text-stone-500">
+                    <span class="block text-sm font-semibold text-[#2d2118]">{{ idea.title }}</span>
+                    <span class="mt-0.5 block truncate text-xs text-[#7a6754]">
                       {{ idea.date ? formatDate(idea.date) : 'Set a date' }}
                     </span>
                   </button>
@@ -704,7 +754,7 @@ async function deleteIdea(id: string) {
 
                 <button
                   type="button"
-                  class="mt-2 w-full rounded-md border border-stone-200 px-3 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-[#f4efe6] focus:outline-none focus:ring-2 focus:ring-[#9fb5a9]"
+                  class="mt-2 w-full rounded-2xl border border-[#d8c3a6] px-3 py-2.5 text-sm font-medium text-[#4d3725] transition hover:bg-[#efe1cc] focus:outline-none focus:ring-2 focus:ring-[#b88a44]"
                   @click="openIdeaModal()"
                 >
                   Add date idea
@@ -712,7 +762,7 @@ async function deleteIdea(id: string) {
 
                 <button
                   type="button"
-                  class="mt-2 w-full rounded-md border border-stone-200 px-3 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-[#f4efe6] focus:outline-none focus:ring-2 focus:ring-[#9fb5a9]"
+                  class="mt-2 w-full rounded-2xl border border-[#d8c3a6] px-3 py-2.5 text-sm font-medium text-[#4d3725] transition hover:bg-[#efe1cc] focus:outline-none focus:ring-2 focus:ring-[#b88a44]"
                   @click="isIdeasOpen = false"
                 >
                   Close
@@ -726,7 +776,7 @@ async function deleteIdea(id: string) {
 
     <EventModal
       v-if="isModalOpen"
-      :date="selectedDate"
+      :date="modalDate"
       :event="editingEvent"
       @close="isModalOpen = false"
       @delete="deleteEvent"
@@ -743,12 +793,12 @@ async function deleteIdea(id: string) {
 
     <div
       v-if="isMonthPickerOpen"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/35 p-3 backdrop-blur-sm"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-3 backdrop-blur-md"
       @click.self="isMonthPickerOpen = false"
     >
-      <section class="relative w-full rounded-lg border border-stone-200 bg-[#fffdf8] p-4 text-left shadow-2xl shadow-stone-950/15 sm:max-w-md md:max-w-lg lg:max-w-xl">
+      <section class="relative w-full rounded-[1.75rem] border border-[#ead9c6]/80 bg-[#f7eddc] p-4 text-left shadow-2xl shadow-black/25 sm:max-w-md md:max-w-lg lg:max-w-xl">
         <button
-          class="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-md border border-stone-200 text-xl leading-none text-stone-500 transition hover:border-[#d4c6b3] hover:bg-[#f4efe6] hover:text-[#163c2f] focus:outline-none focus:ring-2 focus:ring-[#9fb5a9]"
+          class="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full border border-[#d8c3a6] text-xl leading-none text-[#6f5136] transition hover:bg-[#efe1cc] hover:text-[#2f261b] focus:outline-none focus:ring-2 focus:ring-[#b88a44]"
           type="button"
           aria-label="Close month picker"
           @click="isMonthPickerOpen = false"
@@ -758,18 +808,18 @@ async function deleteIdea(id: string) {
 
         <form class="space-y-4" @submit.prevent="goToPickedMonth">
           <div>
-            <span class="text-sm font-medium text-stone-700">Month</span>
+            <span class="text-sm font-medium text-[#4d3725]">Month</span>
             <div class="mt-2 grid grid-cols-3 gap-2">
               <button
                 v-for="month in monthOptions"
                 :key="month.value"
-                class="rounded-md border px-3 py-2.5 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-[#9fb5a9]"
+                class="rounded-2xl border px-3 py-2.5 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-[#b88a44]"
                 :class="[
                   pickerMonth === month.value
-                    ? 'border-[#163c2f] bg-[#163c2f] text-white'
+                    ? 'border-[#244f2f] bg-[#244f2f] text-white'
                     : isActualCurrentMonth(month.value)
-                      ? 'border-[#7a5d3b] bg-[#efe6d8] text-[#5b4329]'
-                      : 'border-stone-200 bg-white text-stone-700 hover:bg-[#f4efe6]',
+                      ? 'border-[#a17024] bg-[#efe0ca] text-[#5b4329]'
+                      : 'border-[#ddccb6] bg-[#fff8ef] text-[#4d3725] hover:bg-[#efe1cc]',
                 ]"
                 type="button"
                 @click="pickerMonth = month.value"
@@ -780,24 +830,24 @@ async function deleteIdea(id: string) {
           </div>
 
           <div>
-            <span class="text-sm font-medium text-stone-700">Year</span>
+            <span class="text-sm font-medium text-[#4d3725]">Year</span>
             <div class="mt-2 flex w-full items-center">
               <button
                 type="button"
-                class="flex-none rounded-md border px-3 py-2.5 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-[#9fb5a9]"
+                class="flex-none rounded-2xl border border-[#ddccb6] px-3 py-2.5 text-sm font-medium text-[#4d3725] transition focus:outline-none focus:ring-2 focus:ring-[#b88a44]"
                 aria-label="Previous year"
                 @click="changePickerYear(-1)"
               >
                 &lsaquo;
               </button>
 
-              <div class="flex-1 text-center rounded-md border border-stone-200 bg-white px-3 py-2.5 text-[#16251f] text-sm font-medium mx-2">
+              <div class="mx-2 flex-1 rounded-2xl border border-[#ddccb6] bg-[#fff8ef] px-3 py-2.5 text-center text-sm font-medium text-[#2f261b]">
                 {{ pickerYear }}
               </div>
 
               <button
                 type="button"
-                class="flex-none rounded-md border px-3 py-2.5 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-[#9fb5a9]"
+                class="flex-none rounded-2xl border border-[#ddccb6] px-3 py-2.5 text-sm font-medium text-[#4d3725] transition focus:outline-none focus:ring-2 focus:ring-[#b88a44]"
                 aria-label="Next year"
                 @click="changePickerYear(1)"
               >
@@ -808,14 +858,14 @@ async function deleteIdea(id: string) {
 
           <div class="flex gap-3 pt-2">
             <button
-              class="flex-1 rounded-md border border-stone-200 px-4 py-2.5 font-medium text-stone-700 transition hover:bg-[#f4efe6] focus:outline-none focus:ring-2 focus:ring-stone-200"
+              class="flex-1 rounded-2xl border border-[#ddccb6] px-4 py-2.5 font-medium text-[#4d3725] transition hover:bg-[#efe1cc] focus:outline-none focus:ring-2 focus:ring-[#b88a44]"
               type="button"
               @click="isMonthPickerOpen = false"
             >
               Cancel
             </button>
             <button
-              class="flex-1 rounded-md bg-[#163c2f] px-4 py-2.5 font-semibold text-white transition hover:bg-[#0f2b22] focus:outline-none focus:ring-2 focus:ring-[#9fb5a9]"
+              class="flex-1 rounded-2xl bg-[#244f2f] px-4 py-2.5 font-semibold text-white transition hover:bg-[#1f4328] focus:outline-none focus:ring-2 focus:ring-[#d5b376]"
               type="submit"
             >
               Go

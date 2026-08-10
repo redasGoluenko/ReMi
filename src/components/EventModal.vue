@@ -16,14 +16,16 @@ const emit = defineEmits<{
 const title = ref('')
 const description = ref('')
 
-const formattedDate = computed(() =>
-  new Intl.DateTimeFormat('en', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  }).format(new Date(`${props.date}T12:00:00`)),
-)
+const formattedDate = computed(() => {
+  const targetDate = new Date(`${props.date}T12:00:00`)
+  const weekday = new Intl.DateTimeFormat('en', { weekday: 'long' }).format(targetDate)
+  const englishMonth = new Intl.DateTimeFormat('en', { month: 'long' }).format(targetDate)
+  const lithuanianMonth = new Intl.DateTimeFormat('lt', { month: 'long' }).format(targetDate)
+  const day = new Intl.DateTimeFormat('en', { day: 'numeric' }).format(targetDate)
+  const year = new Intl.DateTimeFormat('en', { year: 'numeric' }).format(targetDate)
+
+  return `${weekday}, ${englishMonth} (${lithuanianMonth}) ${day}, ${year}`
+})
 
 const isEditing = computed(() => Boolean(props.event))
 const canSave = computed(() => title.value.trim().length > 0)
