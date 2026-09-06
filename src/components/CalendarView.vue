@@ -78,6 +78,10 @@ const unreadPaintings = computed(() => {
 
 const hasUnreadPaintings = computed(() => unreadPaintings.value.length > 0)
 
+const unreadPaintingCountLabel = computed(() =>
+  unreadPaintings.value.length > 99 ? '99+' : String(unreadPaintings.value.length),
+)
+
 function updateRelationshipDuration() {
   const now = new Date()
   let years = now.getFullYear() - relationshipStart.getFullYear()
@@ -695,9 +699,11 @@ async function deleteIdea(id: string) {
 
           <span
             v-if="hasUnreadPaintings"
-            class="absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5 rounded-full border-2 border-[#1f2e1f] bg-[#d84a3a]"
-            aria-hidden="true"
-          />
+            class="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-[#1f2e1f] bg-[#d84a3a] px-1 text-[0.62rem] font-bold leading-none text-white"
+            aria-label="Unread paintings"
+          >
+            {{ unreadPaintingCountLabel }}
+          </span>
         </button>
 
         <h1 class="text-4xl leading-none tracking-[0.01em] drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)] sm:text-5xl lg:text-6xl">
