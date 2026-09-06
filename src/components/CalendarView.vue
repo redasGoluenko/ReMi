@@ -665,7 +665,7 @@ async function deleteIdea(id: string) {
           <div class="mr-3 flex-1 text-left text-sm">{{ toastMessage }}</div>
           <button
             type="button"
-            class="ml-2 inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#d8c3a6] text-sm text-[#70543a] transition hover:bg-[#efe1cc] focus:outline-none focus:ring-2 focus:ring-[#b79460]"
+            class="ml-2 inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#d8c3a6] text-sm text-[#70543a] transition hover:bg-[#efe1cc] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b79460]"
             aria-label="Dismiss notification"
             @click="dismissToast"
           >
@@ -679,7 +679,7 @@ async function deleteIdea(id: string) {
       <header class="mb-5 pt-1 text-center text-[#f7ebd7] sm:mb-6 lg:mb-8">
         <button
           type="button"
-          class="relative mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-full border border-[#cfab6a]/60 bg-[#1f2e1f]/35 text-[#cfab6a] shadow-lg shadow-black/20 backdrop-blur-sm transition hover:border-[#e0c17f] hover:bg-[#2a3c29]/45 focus:outline-none focus:ring-2 focus:ring-[#d5b376]"
+          class="relative mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-full border border-[#cfab6a]/60 bg-[#1f2e1f]/35 text-[#cfab6a] shadow-lg shadow-black/20 backdrop-blur-sm transition hover:border-[#e0c17f] hover:bg-[#2a3c29]/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d5b376]"
           aria-label="Open paintings"
           @click="openPaintings"
         >
@@ -717,7 +717,7 @@ async function deleteIdea(id: string) {
 
       <div class="mb-4 flex items-center justify-between gap-3 text-[#f7ebd7] sm:mb-5">
         <button
-          class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#d9c6ab]/55 bg-[#1d2419]/35 text-2xl text-[#f4e9d6] shadow-lg shadow-black/15 backdrop-blur-sm transition hover:border-[#e0caa5] hover:bg-[#2a3525]/45 focus:outline-none focus:ring-2 focus:ring-[#d5b376]"
+          class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#d9c6ab]/55 bg-[#1d2419]/35 text-2xl text-[#f4e9d6] shadow-lg shadow-black/15 backdrop-blur-sm transition hover:border-[#e0caa5] hover:bg-[#2a3525]/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d5b376]"
           type="button"
           aria-label="Previous month"
           @click="moveMonth(-1)"
@@ -726,7 +726,7 @@ async function deleteIdea(id: string) {
         </button>
 
         <button
-          class="min-w-0 flex-1 rounded-full px-3 py-1 text-center text-2xl font-normal tracking-[0.01em] text-[#f7ebd7] drop-shadow-[0_2px_8px_rgba(0,0,0,0.28)] transition hover:text-white focus:outline-none focus:ring-2 focus:ring-[#d5b376] sm:text-3xl lg:text-[2.15rem]"
+          class="min-w-0 flex-1 rounded-full px-3 py-1 text-center text-2xl font-normal tracking-[0.01em] text-[#f7ebd7] drop-shadow-[0_2px_8px_rgba(0,0,0,0.28)] transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d5b376] sm:text-3xl lg:text-[2.15rem]"
           type="button"
           @click="openMonthPicker"
         >
@@ -734,7 +734,7 @@ async function deleteIdea(id: string) {
         </button>
 
         <button
-          class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#d9c6ab]/55 bg-[#1d2419]/35 text-2xl text-[#f4e9d6] shadow-lg shadow-black/15 backdrop-blur-sm transition hover:border-[#e0caa5] hover:bg-[#2a3525]/45 focus:outline-none focus:ring-2 focus:ring-[#d5b376]"
+          class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#d9c6ab]/55 bg-[#1d2419]/35 text-2xl text-[#f4e9d6] shadow-lg shadow-black/15 backdrop-blur-sm transition hover:border-[#e0caa5] hover:bg-[#2a3525]/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d5b376]"
           type="button"
           aria-label="Next month"
           @click="moveMonth(1)"
@@ -744,7 +744,7 @@ async function deleteIdea(id: string) {
 
         <div ref="loggedDatesMenu" class="relative ml-1">
           <button
-            class="rounded-full border border-[#f1e4d1]/70 bg-[#f5e9db] px-4 py-3 text-sm font-medium text-[#4d3725] shadow-lg shadow-black/15 transition hover:bg-[#fff4e5] focus:outline-none focus:ring-2 focus:ring-[#d5b376] sm:px-5 sm:text-base"
+            class="rounded-full border border-[#f1e4d1]/70 bg-[#f5e9db] px-4 py-3 text-sm font-medium text-[#4d3725] shadow-lg shadow-black/15 transition hover:bg-[#fff4e5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d5b376] sm:px-5 sm:text-base"
             type="button"
             @click="isLoggedDatesOpen = !isLoggedDatesOpen"
           >
@@ -771,7 +771,7 @@ async function deleteIdea(id: string) {
               <button
                 v-for="loggedDate in loggedDates"
                 :key="loggedDate.date"
-                class="w-full rounded-2xl px-3 py-2.5 text-left transition hover:bg-[#efe0ca] focus:outline-none focus:ring-2 focus:ring-[#c9a369]"
+                class="w-full rounded-2xl px-3 py-2.5 text-left transition hover:bg-[#efe0ca] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c9a369]"
                 type="button"
                 @click="goToLoggedDate(loggedDate.date)"
               >
@@ -799,7 +799,7 @@ async function deleteIdea(id: string) {
           <div
             v-for="day in calendarDays"
             :key="day.date"
-            class="group min-h-0 cursor-pointer border-b border-r border-[#eadbc7] p-2 text-left transition hover:bg-[#efdfc8]/75 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#b88a44] sm:p-2.5 lg:p-3 [&:nth-child(7n)]:border-r-0"
+            class="group min-h-0 cursor-pointer border-b border-r border-[#eadbc7] p-2 text-left transition hover:bg-[#efdfc8]/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#b88a44] sm:p-2.5 lg:p-3 [&:nth-child(7n)]:border-r-0"
             :class="[
               day.events.length > 0
                 ? 'bg-[#e2d2b3] ring-2 ring-inset ring-[#d7c8a6] shadow-[inset_0_1px_0_rgba(255,255,255,0.3)]'
@@ -836,7 +836,7 @@ async function deleteIdea(id: string) {
               <button
                 v-for="event in day.events"
                 :key="event.id"
-                class="truncate rounded-full bg-[#e2d2bf]/95 px-2.5 py-1 text-left text-xs font-medium text-[#2d2118] transition hover:bg-[#d8c1a4] focus:outline-none focus:ring-2 focus:ring-[#9a6f2c]"
+                class="truncate rounded-full bg-[#e2d2bf]/95 px-2.5 py-1 text-left text-xs font-medium text-[#2d2118] transition hover:bg-[#d8c1a4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9a6f2c]"
                 type="button"
                 @click.stop="openExistingEvent(event)"
               >
@@ -852,7 +852,7 @@ async function deleteIdea(id: string) {
           <div class="grid gap-3 sm:grid-cols-2">
             <button
               type="button"
-              class="flex items-center justify-center gap-3 rounded-[1.4rem] border border-[#e3d1b8] bg-[#f5ead9] px-4 py-4 text-lg font-medium text-[#2f251b] shadow-sm transition hover:bg-[#f0dfc8] focus:outline-none focus:ring-2 focus:ring-[#b88a44]"
+              class="flex items-center justify-center gap-3 rounded-[1.4rem] border border-[#e3d1b8] bg-[#f5ead9] px-4 py-4 text-lg font-medium text-[#2f251b] shadow-sm transition hover:bg-[#f0dfc8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b88a44]"
               @click="goToToday"
             >
               <span class="text-2xl leading-none text-[#2f6b3d]">☼</span>
@@ -862,7 +862,7 @@ async function deleteIdea(id: string) {
             <div ref="ideasMenu" class="relative">
               <button
                 type="button"
-                class="flex w-full items-center justify-center gap-3 rounded-[1.4rem] border border-[#2f6b3d] bg-[#244f2f] px-4 py-4 text-lg font-medium text-[#f7eddc] shadow-sm transition hover:bg-[#1f4328] focus:outline-none focus:ring-2 focus:ring-[#d5b376]"
+                class="flex w-full items-center justify-center gap-3 rounded-[1.4rem] border border-[#2f6b3d] bg-[#244f2f] px-4 py-4 text-lg font-medium text-[#f7eddc] shadow-sm transition hover:bg-[#1f4328] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d5b376]"
                 @click="openDateIdeas"
               >
                 <span class="text-xl leading-none text-[#f3dca6]">☗</span>
@@ -882,7 +882,7 @@ async function deleteIdea(id: string) {
                     v-for="idea in dateIdeas"
                     :key="idea.id"
                     type="button"
-                    class="w-full rounded-2xl px-3 py-2.5 text-left transition hover:bg-[#eee0cd] focus:outline-none focus:ring-2 focus:ring-[#b88a44]"
+                    class="w-full rounded-2xl px-3 py-2.5 text-left transition hover:bg-[#eee0cd] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b88a44]"
                     @click="openIdeaModal(idea)"
                   >
                     <span class="block text-sm font-semibold text-[#2d2118]">{{ idea.title }}</span>
@@ -894,7 +894,7 @@ async function deleteIdea(id: string) {
 
                 <button
                   type="button"
-                  class="mt-2 w-full rounded-2xl border border-[#d8c3a6] px-3 py-2.5 text-sm font-medium text-[#4d3725] transition hover:bg-[#efe1cc] focus:outline-none focus:ring-2 focus:ring-[#b88a44]"
+                  class="mt-2 w-full rounded-2xl border border-[#d8c3a6] px-3 py-2.5 text-sm font-medium text-[#4d3725] transition hover:bg-[#efe1cc] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b88a44]"
                   @click="openIdeaModal()"
                 >
                   Add date idea
@@ -902,7 +902,7 @@ async function deleteIdea(id: string) {
 
                 <button
                   type="button"
-                  class="mt-2 w-full rounded-2xl border border-[#d8c3a6] px-3 py-2.5 text-sm font-medium text-[#4d3725] transition hover:bg-[#efe1cc] focus:outline-none focus:ring-2 focus:ring-[#b88a44]"
+                  class="mt-2 w-full rounded-2xl border border-[#d8c3a6] px-3 py-2.5 text-sm font-medium text-[#4d3725] transition hover:bg-[#efe1cc] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b88a44]"
                   @click="isIdeasOpen = false"
                 >
                   Close
@@ -949,7 +949,7 @@ async function deleteIdea(id: string) {
     >
       <section class="relative w-full rounded-[1.75rem] border border-[#ead9c6]/80 bg-[#f7eddc] p-4 text-left shadow-2xl shadow-black/25 sm:max-w-md md:max-w-lg lg:max-w-xl">
         <button
-          class="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full border border-[#d8c3a6] text-xl leading-none text-[#6f5136] transition hover:bg-[#efe1cc] hover:text-[#2f261b] focus:outline-none focus:ring-2 focus:ring-[#b88a44]"
+          class="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full border border-[#d8c3a6] text-xl leading-none text-[#6f5136] transition hover:bg-[#efe1cc] hover:text-[#2f261b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b88a44]"
           type="button"
           aria-label="Close month picker"
           @click="isMonthPickerOpen = false"
@@ -964,7 +964,7 @@ async function deleteIdea(id: string) {
               <button
                 v-for="month in monthOptions"
                 :key="month.value"
-                class="rounded-2xl border px-3 py-2.5 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-[#b88a44]"
+                class="rounded-2xl border px-3 py-2.5 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b88a44]"
                 :class="[
                   pickerMonth === month.value
                     ? 'border-[#244f2f] bg-[#244f2f] text-white'
@@ -985,7 +985,7 @@ async function deleteIdea(id: string) {
             <div class="mt-2 flex w-full items-center">
               <button
                 type="button"
-                class="flex-none rounded-2xl border border-[#ddccb6] px-3 py-2.5 text-sm font-medium text-[#4d3725] transition focus:outline-none focus:ring-2 focus:ring-[#b88a44]"
+                class="flex-none rounded-2xl border border-[#ddccb6] px-3 py-2.5 text-sm font-medium text-[#4d3725] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b88a44]"
                 aria-label="Previous year"
                 @click="changePickerYear(-1)"
               >
@@ -998,7 +998,7 @@ async function deleteIdea(id: string) {
 
               <button
                 type="button"
-                class="flex-none rounded-2xl border border-[#ddccb6] px-3 py-2.5 text-sm font-medium text-[#4d3725] transition focus:outline-none focus:ring-2 focus:ring-[#b88a44]"
+                class="flex-none rounded-2xl border border-[#ddccb6] px-3 py-2.5 text-sm font-medium text-[#4d3725] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b88a44]"
                 aria-label="Next year"
                 @click="changePickerYear(1)"
               >
@@ -1009,14 +1009,14 @@ async function deleteIdea(id: string) {
 
           <div class="flex gap-3 pt-2">
             <button
-              class="flex-1 rounded-2xl border border-[#ddccb6] px-4 py-2.5 font-medium text-[#4d3725] transition hover:bg-[#efe1cc] focus:outline-none focus:ring-2 focus:ring-[#b88a44]"
+              class="flex-1 rounded-2xl border border-[#ddccb6] px-4 py-2.5 font-medium text-[#4d3725] transition hover:bg-[#efe1cc] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b88a44]"
               type="button"
               @click="isMonthPickerOpen = false"
             >
               Cancel
             </button>
             <button
-              class="flex-1 rounded-2xl bg-[#244f2f] px-4 py-2.5 font-semibold text-white transition hover:bg-[#1f4328] focus:outline-none focus:ring-2 focus:ring-[#d5b376]"
+              class="flex-1 rounded-2xl bg-[#244f2f] px-4 py-2.5 font-semibold text-white transition hover:bg-[#1f4328] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d5b376]"
               type="submit"
             >
               Go
