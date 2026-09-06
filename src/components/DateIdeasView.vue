@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import type { CalendarEvent } from '../types/calendar'
 import { getSupabaseClient } from '../services/supabaseClient'
+import { getCurrentViewer, sendNotification } from '../services/notifications'
 
 const emit = defineEmits<{
   back: []
@@ -97,6 +98,13 @@ const saveIdea = async () => {
       if (error) {
         throw new Error(error.message)
       }
+
+      void sendNotification({
+        type: 'date',
+        actor: getCurrentViewer(),
+        title: 'New date idea',
+        body: `${title.value.trim()} was added to your date ideas.`,
+      })
     } else {
       const { error } = await supabase
         .from('dates')
@@ -139,6 +147,13 @@ const deleteIdea = async (idea: CalendarEvent) => {
     if (error) {
       throw new Error(error.message)
     }
+
+    void sendNotification({
+      type: 'date',
+      actor: getCurrentViewer(),
+      title: 'Date planned',
+      body: `${idea.title} now has a date in your calendar.`,
+    })
 
     await loadIdeas()
   } catch (error) {

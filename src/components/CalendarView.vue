@@ -5,6 +5,13 @@ import DateIdeaModal from './DateIdeaModal.vue'
 import PaintingModal from './PaintingModal.vue'
 import { supabaseEventRepository } from '../services/eventStorage'
 import { supabasePaintingRepository } from '../services/paintingStorage'
+import {
+  enablePushNotifications,
+  getCurrentViewer,
+  getNotificationStatus,
+  sendNotification,
+  type NotificationStatus,
+} from '../services/notifications'
 import type { CalendarEvent } from '../types/calendar'
 import type { Painting, PaintingAuthor } from '../types/painting'
 
@@ -37,6 +44,7 @@ const isLoadingEvents = ref(false)
 const isSavingEvent = ref(false)
 const isDeletingEvent = ref(false)
 const isSavingPainting = ref(false)
+const notificationStatus = ref<NotificationStatus>('disabled')
 const loadError = ref('')
 const toastMessage = ref('')
 const loggedDatesMenu = ref<HTMLElement | null>(null)
@@ -77,6 +85,26 @@ const unreadPaintings = computed(() => {
 })
 
 const hasUnreadPaintings = computed(() => unreadPaintings.value.length > 0)
+
+const notificationButtonLabel = computed(() => {
+  if (notificationStatus.value === 'enabled') {
+    return 'Notifications enabled'
+  }
+
+  if (notificationStatus.value === 'blocked') {
+    return 'Notifications blocked'
+  }
+
+  if (notificationStatus.value === 'unsupported') {
+    return 'Notifications unavailable'
+  }
+
+  if (notificationStatus.value === 'loading') {
+    return 'Enabling...'
+  }
+
+  return 'Enable notifications'
+})
 
 const unreadPaintingCountLabel = computed(() =>
   unreadPaintings.value.length > 99 ? '99+' : String(unreadPaintings.value.length),
@@ -163,6 +191,7 @@ const calendarDays = computed<CalendarDay[]>(() => {
 })
 
 onMounted(async () => {
+  notificationStatus.value = getNotificationStatus()
   updateRelationshipDuration()
   relationshipIntervalId = window.setInterval(updateRelationshipDuration, 60_000)
   await loadEvents()
@@ -226,6 +255,25 @@ function writeDismissedPaintingIds(ids: string[]) {
 
 function openPaintings() {
   isPaintingModalOpen.value = true
+}
+
+async function enableNotifications() {
+  if (!paintingViewer.value) {
+    openPaintings()
+    showToast('Choose your name in Paintings first')
+    return
+  }
+
+  notificationStatus.value = 'loading'
+
+  try {
+    await enablePushNotifications(paintingViewer.value)
+    notificationStatus.value = 'enabled'
+    showToast('Notifications enabled')
+  } catch (error) {
+    notificationStatus.value = getNotificationStatus()
+    showToast(error instanceof Error ? error.message : 'Could not enable notifications')
+  }
 }
 
 function choosePaintingViewer(viewer: PaintingAuthor) {
@@ -504,6 +552,12 @@ async function savePainting(imageData: string) {
     paintings.value.push(savedPainting)
     isPaintingModalOpen.value = false
     showToast('Painting sent')
+    void sendNotification({
+      type: 'painting',
+      actor: paintingViewer.value,
+      title: 'New painting from your favorite person',
+      body: 'A new painting is waiting for you in Remi.',
+    })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error'
     showToast(`Could not send painting: ${message}`)
@@ -558,6 +612,12 @@ async function saveEvent(event: CalendarEvent) {
     isMonthPickerOpen.value = false
     loadError.value = ''
     showToast(isUpdate ? 'Edit successful' : 'Date plan saved')
+    void sendNotification({
+      type: 'date',
+      actor: getCurrentViewer(),
+      title: isUpdate ? 'Date plan updated' : 'New date plan',
+      body: isUpdate ? `${savedEvent.title} was updated.` : `${savedEvent.title} was added to your calendar.`,
+    })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error'
     showToast(`Could not save date: ${message}`)
@@ -713,6 +773,15 @@ async function deleteIdea(id: string) {
         <p class="mt-2 text-sm font-medium tracking-[0.08em] text-[#efe0c8]/75 sm:text-base">
           {{ relationshipDuration }}
         </p>
+
+        <button
+          type="button"
+          class="mt-3 rounded-full border border-[#ead9c6]/65 bg-[#1d2419]/35 px-4 py-2 text-xs font-semibold tracking-[0.04em] text-[#f7ebd7] shadow-lg shadow-black/15 backdrop-blur-sm transition hover:border-[#ead9c6] hover:bg-[#2a3525]/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d5b376] disabled:cursor-not-allowed disabled:opacity-60"
+          :disabled="notificationStatus === 'loading' || notificationStatus === 'blocked' || notificationStatus === 'unsupported'"
+          @click="enableNotifications"
+        >
+          {{ notificationButtonLabel }}
+        </button>
       </header>
 
       <div class="mb-4 flex items-center justify-between gap-3 text-[#f7ebd7] sm:mb-5">

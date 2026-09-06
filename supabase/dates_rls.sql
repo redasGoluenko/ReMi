@@ -56,3 +56,29 @@ on public.paintings
 for insert
 to anon
 with check (true);
+
+create table if not exists public.notification_subscriptions (
+  endpoint text primary key,
+  viewer text not null check (viewer in ('redas', 'migle')),
+  subscription jsonb not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.notification_subscriptions enable row level security;
+
+drop policy if exists "remi notification subscriptions insert anon" on public.notification_subscriptions;
+drop policy if exists "remi notification subscriptions update anon" on public.notification_subscriptions;
+
+create policy "remi notification subscriptions insert anon"
+on public.notification_subscriptions
+for insert
+to anon
+with check (true);
+
+create policy "remi notification subscriptions update anon"
+on public.notification_subscriptions
+for update
+to anon
+using (true)
+with check (true);
