@@ -2,8 +2,11 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import EventModal from './EventModal.vue'
 import DateIdeaModal from './DateIdeaModal.vue'
+import PaintingModal from './PaintingModal.vue'
 import { supabaseEventRepository } from '../services/eventStorage'
+import { supabasePaintingRepository } from '../services/paintingStorage'
 import type { CalendarEvent } from '../types/calendar'
+import type { Painting, PaintingAuthor } from '../types/painting'
 
 interface CalendarDay {
   date: string
@@ -14,19 +17,26 @@ interface CalendarDay {
 }
 
 const today = new Date()
+const PAINTING_VIEWER_KEY = 'remi.painting.viewer'
+const DISMISSED_PAINTINGS_KEY = 'remi.painting.dismissed'
 const currentMonth = ref(new Date(today.getFullYear(), today.getMonth(), 1))
 const events = ref<CalendarEvent[]>([])
+const paintings = ref<Painting[]>([])
+const paintingViewer = ref<PaintingAuthor | null>(readPaintingViewer())
+const dismissedPaintingIds = ref<string[]>(readDismissedPaintingIds())
 const selectedDate = ref(toDateKey(today))
 const modalDate = ref(toDateKey(today))
 const editingEvent = ref<CalendarEvent | null>(null)
 const isModalOpen = ref(false)
 const isIdeaModalOpen = ref(false)
+const isPaintingModalOpen = ref(false)
 const isMonthPickerOpen = ref(false)
 const isLoggedDatesOpen = ref(false)
 const isIdeasOpen = ref(false)
 const isLoadingEvents = ref(false)
 const isSavingEvent = ref(false)
 const isDeletingEvent = ref(false)
+const isSavingPainting = ref(false)
 const loadError = ref('')
 const toastMessage = ref('')
 const loggedDatesMenu = ref<HTMLElement | null>(null)
@@ -53,6 +63,20 @@ const monthOptions = Array.from({ length: 12 }, (_, index) => ({
 const monthLabel = computed(() =>
   `${formatBilingualMonth(currentMonth.value)} ${currentMonth.value.getFullYear()}`,
 )
+
+const unreadPaintings = computed(() => {
+  if (!paintingViewer.value) {
+    return []
+  }
+
+  const dismissed = new Set(dismissedPaintingIds.value)
+
+  return paintings.value.filter(
+    (painting) => painting.author !== paintingViewer.value && !dismissed.has(painting.id),
+  )
+})
+
+const hasUnreadPaintings = computed(() => unreadPaintings.value.length > 0)
 
 function updateRelationshipDuration() {
   const now = new Date()
@@ -138,6 +162,7 @@ onMounted(async () => {
   updateRelationshipDuration()
   relationshipIntervalId = window.setInterval(updateRelationshipDuration, 60_000)
   await loadEvents()
+  await loadPaintings()
   document.addEventListener('click', closeLoggedDatesOnOutsideClick)
 })
 
@@ -159,6 +184,58 @@ function toDateKey(date: Date): string {
   const day = String(date.getDate()).padStart(2, '0')
 
   return `${year}-${month}-${day}`
+}
+
+function readPaintingViewer(): PaintingAuthor | null {
+  const storedViewer = window.localStorage.getItem(PAINTING_VIEWER_KEY)
+
+  if (storedViewer === 'redas' || storedViewer === 'migle') {
+    return storedViewer
+  }
+
+  return null
+}
+
+function readDismissedPaintingIds(): string[] {
+  const rawDismissed = window.localStorage.getItem(DISMISSED_PAINTINGS_KEY)
+
+  if (!rawDismissed) {
+    return []
+  }
+
+  try {
+    const parsedDismissed = JSON.parse(rawDismissed)
+
+    if (!Array.isArray(parsedDismissed)) {
+      return []
+    }
+
+    return parsedDismissed.filter((id): id is string => typeof id === 'string')
+  } catch {
+    return []
+  }
+}
+
+function writeDismissedPaintingIds(ids: string[]) {
+  window.localStorage.setItem(DISMISSED_PAINTINGS_KEY, JSON.stringify(ids))
+}
+
+function openPaintings() {
+  isPaintingModalOpen.value = true
+}
+
+function choosePaintingViewer(viewer: PaintingAuthor) {
+  paintingViewer.value = viewer
+  window.localStorage.setItem(PAINTING_VIEWER_KEY, viewer)
+}
+
+function dismissPainting(id: string) {
+  if (dismissedPaintingIds.value.includes(id)) {
+    return
+  }
+
+  dismissedPaintingIds.value = [...dismissedPaintingIds.value, id]
+  writeDismissedPaintingIds(dismissedPaintingIds.value)
 }
 
 function moveMonth(direction: number) {
@@ -397,6 +474,40 @@ async function loadEvents() {
   }
 }
 
+async function loadPaintings() {
+  try {
+    paintings.value = await supabasePaintingRepository.list()
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    showToast(`Could not load paintings: ${message}`)
+  }
+}
+
+async function savePainting(imageData: string) {
+  if (isSavingPainting.value || !paintingViewer.value) {
+    return
+  }
+
+  isSavingPainting.value = true
+
+  try {
+    const savedPainting = await supabasePaintingRepository.create({
+      id: crypto.randomUUID(),
+      author: paintingViewer.value,
+      imageData,
+    })
+
+    paintings.value.push(savedPainting)
+    isPaintingModalOpen.value = false
+    showToast('Painting sent')
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    showToast(`Could not send painting: ${message}`)
+  } finally {
+    isSavingPainting.value = false
+  }
+}
+
 async function saveEvent(event: CalendarEvent) {
   if (isSavingEvent.value || isDeletingEvent.value) {
     return
@@ -562,9 +673,32 @@ async function deleteIdea(id: string) {
 
     <div class="relative z-10 mx-auto flex h-full w-full max-w-5xl flex-col px-3 py-4 sm:px-5 sm:py-6 lg:px-8 lg:py-8">
       <header class="mb-5 pt-1 text-center text-[#f7ebd7] sm:mb-6 lg:mb-8">
-        <div class="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-full border border-[#cfab6a]/60 bg-[#1f2e1f]/35 text-[#cfab6a] shadow-lg shadow-black/20 backdrop-blur-sm">
-          <span class="text-xl leading-none">❦</span>
-        </div>
+        <button
+          type="button"
+          class="relative mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-full border border-[#cfab6a]/60 bg-[#1f2e1f]/35 text-[#cfab6a] shadow-lg shadow-black/20 backdrop-blur-sm transition hover:border-[#e0c17f] hover:bg-[#2a3c29]/45 focus:outline-none focus:ring-2 focus:ring-[#d5b376]"
+          aria-label="Open paintings"
+          @click="openPaintings"
+        >
+          <svg
+            class="h-5 w-5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="m9.06 11.9 8.07-8.06a2.85 2.85 0 0 1 4.03 4.03l-8.06 8.07" />
+            <path d="M7.07 14.94c-1.66 0-3 1.34-3 3 0 1.1-.9 2-2 2 1.33 1.33 3.08 2 5 2a4 4 0 0 0 0-8Z" />
+          </svg>
+
+          <span
+            v-if="hasUnreadPaintings"
+            class="absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5 rounded-full border-2 border-[#1f2e1f] bg-[#d84a3a]"
+            aria-hidden="true"
+          />
+        </button>
 
         <h1 class="text-4xl leading-none tracking-[0.01em] drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)] sm:text-5xl lg:text-6xl">
           Redas &amp; Miglė
@@ -789,6 +923,17 @@ async function deleteIdea(id: string) {
       @close="isIdeaModalOpen = false"
       @delete="deleteIdea"
       @save="saveIdea"
+    />
+
+    <PaintingModal
+      v-if="isPaintingModalOpen"
+      :viewer="paintingViewer"
+      :unread-paintings="unreadPaintings"
+      :is-saving="isSavingPainting"
+      @close="isPaintingModalOpen = false"
+      @choose-viewer="choosePaintingViewer"
+      @dismiss="dismissPainting"
+      @submit="savePainting"
     />
 
     <div
