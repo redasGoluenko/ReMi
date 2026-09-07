@@ -61,8 +61,16 @@ function decodeBase64Key(value: string) {
 export async function enablePushNotifications(viewer: PaintingAuthor) {
   const publicKey = getPublicKey()
 
-  if (!canUsePushNotifications() || !publicKey) {
-    throw new Error('Push notifications are not configured for this app yet.')
+  if (!window.isSecureContext) {
+    throw new Error('Notifications require the secure HTTPS version of Remi.')
+  }
+
+  if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+    throw new Error('This iPhone needs iOS 16.4 or newer for Home Screen notifications.')
+  }
+
+  if (!publicKey) {
+    throw new Error('Notifications are missing their public key in the deployed app.')
   }
 
   const permission = await Notification.requestPermission()

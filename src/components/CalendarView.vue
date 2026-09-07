@@ -96,7 +96,7 @@ const notificationButtonLabel = computed(() => {
   }
 
   if (notificationStatus.value === 'unsupported') {
-    return 'Notifications unavailable'
+    return 'Enable notifications'
   }
 
   if (notificationStatus.value === 'loading') {
@@ -787,7 +787,7 @@ async function deleteIdea(id: string) {
           v-if="notificationStatus !== 'enabled'"
           type="button"
           class="mt-3 rounded-full border border-[#ead9c6]/65 bg-[#1d2419]/35 px-4 py-2 text-xs font-semibold tracking-[0.04em] text-[#f7ebd7] shadow-lg shadow-black/15 backdrop-blur-sm transition hover:border-[#ead9c6] hover:bg-[#2a3525]/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d5b376] disabled:cursor-not-allowed disabled:opacity-60"
-          :disabled="notificationStatus === 'loading' || notificationStatus === 'blocked' || notificationStatus === 'unsupported'"
+          :disabled="notificationStatus === 'loading' || notificationStatus === 'blocked'"
           @click="enableNotifications"
         >
           {{ notificationButtonLabel }}
