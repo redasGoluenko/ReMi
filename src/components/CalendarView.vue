@@ -692,6 +692,15 @@ async function saveIdea(idea: CalendarEvent) {
     isIdeaModalOpen.value = false
     loadError.value = ''
     showIdeaToast(isUpdate ? 'Idea updated' : 'Idea saved')
+
+    if (!isUpdate) {
+      void sendNotification({
+        type: 'date',
+        actor: getCurrentViewer(),
+        title: 'New date idea',
+        body: `${savedIdea.title} was added to your date ideas.`,
+      })
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error'
     showIdeaToast(`Could not save idea: ${message}`)
