@@ -5,7 +5,6 @@ const PAINTING_VIEWER_KEY = 'remi.painting.viewer'
 
 export type NotificationStatus =
   | 'unsupported'
-  | 'install-required'
   | 'disabled'
   | 'enabled'
   | 'blocked'
@@ -35,25 +34,7 @@ export function canUsePushNotifications() {
   )
 }
 
-function isIosDevice() {
-  return /iPhone|iPad|iPod/.test(navigator.userAgent) ||
-    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
-}
-
-function isInstalledWebApp() {
-  return window.matchMedia('(display-mode: standalone)').matches ||
-    (navigator as Navigator & { standalone?: boolean }).standalone === true
-}
-
 export function getNotificationStatus(): NotificationStatus {
-  if (
-    isIosDevice() &&
-    window.isSecureContext &&
-    !isInstalledWebApp()
-  ) {
-    return 'install-required'
-  }
-
   if (!canUsePushNotifications() || !getPublicKey()) {
     return 'unsupported'
   }
@@ -79,10 +60,6 @@ function decodeBase64Key(value: string) {
 
 export async function enablePushNotifications(viewer: PaintingAuthor) {
   const publicKey = getPublicKey()
-
-  if (getNotificationStatus() === 'install-required') {
-    throw new Error('On iPhone, add Remi to your Home Screen, open it there, then enable notifications.')
-  }
 
   if (!canUsePushNotifications() || !publicKey) {
     throw new Error('Push notifications are not configured for this app yet.')

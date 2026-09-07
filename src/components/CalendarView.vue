@@ -99,10 +99,6 @@ const notificationButtonLabel = computed(() => {
     return 'Notifications unavailable'
   }
 
-  if (notificationStatus.value === 'install-required') {
-    return 'Add Remi to Home Screen'
-  }
-
   if (notificationStatus.value === 'loading') {
     return 'Enabling...'
   }
