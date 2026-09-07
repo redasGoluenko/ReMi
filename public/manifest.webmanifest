@@ -1,0 +1,16 @@
+{
+  "name": "Remi",
+  "short_name": "Remi",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#10130d",
+  "theme_color": "#10130d",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
