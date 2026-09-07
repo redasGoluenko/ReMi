@@ -69,16 +69,25 @@ alter table public.notification_subscriptions enable row level security;
 
 drop policy if exists "remi notification subscriptions insert anon" on public.notification_subscriptions;
 drop policy if exists "remi notification subscriptions update anon" on public.notification_subscriptions;
+drop policy if exists "remi notification subscriptions select anon" on public.notification_subscriptions;
+
+grant select, insert, update on public.notification_subscriptions to anon, authenticated;
 
 create policy "remi notification subscriptions insert anon"
 on public.notification_subscriptions
 for insert
-to anon
+to anon, authenticated
 with check (true);
 
 create policy "remi notification subscriptions update anon"
 on public.notification_subscriptions
 for update
-to anon
+to anon, authenticated
 using (true)
 with check (true);
+
+create policy "remi notification subscriptions select anon"
+on public.notification_subscriptions
+for select
+to anon, authenticated
+using (true);
