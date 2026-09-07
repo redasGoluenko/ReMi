@@ -43,6 +43,10 @@ export function getNotificationStatus(): NotificationStatus {
 }
 
 function decodeBase64Key(value: string) {
+  if (!/^[A-Za-z0-9_-]{80,90}$/.test(value)) {
+    throw new Error('The VAPID public key is incomplete or contains invalid characters.')
+  }
+
   const padding = '='.repeat((4 - (value.length % 4)) % 4)
   const base64 = (value + padding).replace(/-/g, '+').replace(/_/g, '/')
   const rawData = window.atob(base64)
